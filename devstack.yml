@@ -5,11 +5,11 @@
     public_ip: 192.168.27.100
     version: stable/mitaka
     floating_ip_range: 172.24.4.0/24
-    heat: False
+    heat: True
     neutron: True
     neutron_lbaasv2: False
-    swift: False
-    security_groups: False
+    swift: True
+    security_groups: True
     tempest: False
     keyring_config_dir: /home/vagrant/.local/share/python_keyring
     app_catalog: False
