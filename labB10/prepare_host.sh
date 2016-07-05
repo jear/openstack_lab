@@ -35,3 +35,7 @@ fi
 pdsh -R ssh -w ^labhosts.txt "apt-get install -y git ansible vagrant virtualbox"
 pdsh -R ssh -w ^labhosts.txt "vagrant box add ubuntu/trusty64 https://cloud-images.ubuntu.com/vagrant/trusty/current/trusty-server-cloudimg-amd64-vagrant-disk1.box"
 pdsh -R ssh -w ^labhosts.txt "git clone https://github.com/uggla/openstack_lab.git"
+
+# Get debian cloud image localy and then push to our labs
+wget http://cdimage.debian.org/cdimage/openstack/current/debian-8.5.0-openstack-amd64.qcow2
+pdcp -R ssh -w ^labhosts.txt debian-8.5.0-openstack-amd64.qcow2 /root
