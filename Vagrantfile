@@ -50,13 +50,21 @@ Vagrant.configure("2") do |config|
         vb.customize ["modifyvm", :id, "--cpus", cpu]
         # eth2 must be in promiscuous mode for floating IPs to be accessible
         vb.customize ["modifyvm", :id, "--nicpromisc3", "allow-all"]
-	    vb.customize ['createhd', '--filename', file_to_disk, '--size', 100 * 1024]
-	    vb.customize ['storageattach', :id, '--storagectl', 'SATA Controller', '--port', 1, '--device', 0, '--type', 'hdd', '--medium', file_to_disk]
     end
 
-    # default router
+	if labenv == "LAB"
+    	config.vm.provider :virtualbox do |vb|
+	    	vb.customize ['createhd', '--filename', file_to_disk, '--size', 100 * 1024]
+		    vb.customize ['storageattach', :id, '--storagectl', 'SATAController', '--port', 1, '--device', 0, '--type', 'hdd', '--medium', file_to_disk]
+		end
+	end
+
+    # default router + disk
 	if labenv == "LAB"
 		config.vm.provision :shell, :inline => "sudo ip r change default via 10.3.222.1"
+		config.vm.provision :shell, :inline => "sudo mkdir /instances"
+		config.vm.provision :shell, :inline => "sudo fsck.ext4 /dev/sdb"
+		config.vm.provision :shell, :inline => "sudo mount /dev/sdb /instances"
 	end
 
     config.vm.provision :ansible do |ansible|
