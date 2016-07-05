@@ -22,21 +22,21 @@ Vagrant.configure("2") do |config|
 
 	memory=6144
 	cpu=2
-	ctrl_ip = "192.168.27.100"
+	param = Hash["ctrl_ip" => "192.168.27.100"]
 
 	if labenv == "LAB"
 		memory=12288
 		cpu=4
-		ctrl_ip = labhosts[hostname]
+		param = Hash["ctrl_ip" => ctrl_ip = labhosts[hostname]]
 	end
 
     config.vm.box = "ubuntu/trusty64"
     config.ssh.forward_agent = true
     # eth1, this will be the endpoint
 	if labenv == "LAB"
-		config.vm.network :public_network, ip: ctrl_ip
+		config.vm.network :public_network, ip: param["ctrl_ip"]
 	else
-		config.vm.network :private_network, ip: ctrl_ip
+		config.vm.network :private_network, ip: param["ctrl_ip"]
 	end
 
     # eth2, this will be the OpenStack "public" network
@@ -60,7 +60,7 @@ Vagrant.configure("2") do |config|
         ansible.host_key_checking = false
         ansible.playbook = "devstack.yml"
         ansible.verbose = "v"
-	    ansible.extra_vars = "{ ctrl_ip: #{ ctrl_ip } }"
+	    ansible.extra_vars = param
     end
     #config.vm.provision :shell, :inline => "cd devstack; sudo -u vagrant env HOME=/home/vagrant ./stack.sh"
     #config.vm.provision :shell, :inline => "ovs-vsctl add-port br-ex eth2"
