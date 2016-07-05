@@ -37,5 +37,4 @@ pdsh -R ssh -w ^labhosts.txt "vagrant box add ubuntu/trusty64 https://cloud-imag
 pdsh -R ssh -w ^labhosts.txt "git clone https://github.com/uggla/openstack_lab.git"
 
 # Get debian cloud image localy and then push to our labs
-wget http://cdimage.debian.org/cdimage/openstack/current/debian-8.5.0-openstack-amd64.qcow2
-pdcp -R ssh -w ^labhosts.txt debian-8.5.0-openstack-amd64.qcow2 /root
+pdsh -R ssh -w ^labhosts.txt "cd openstack_lab/devstack/images && wget http://cdimage.debian.org/cdimage/openstack/8.5.0/debian-8.5.0-openstack-amd64.qcow2"
