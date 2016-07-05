@@ -63,7 +63,7 @@ Vagrant.configure("2") do |config|
 	if labenv == "LAB"
 		config.vm.provision :shell, :inline => "sudo ip r change default via 10.3.222.1"
 		config.vm.provision :shell, :inline => "sudo mkdir /instances"
-		config.vm.provision :shell, :inline => "sudo mkfs.ext4 /dev/sdb"
+		config.vm.provision :shell, :inline => "sudo mkfs.ext4 -F /dev/sdb"
 		config.vm.provision :shell, :inline => "sudo mount /dev/sdb /instances"
 		config.vm.provision :shell, :inline => "sudo chown -R vagrant:vagrant /instances"
 	end
