@@ -52,7 +52,9 @@ Vagrant.configure("2") do |config|
     end
 
     # default router
-	#config.vm.provision :shell, :inline => "sudo ip r change default via 10.3.222.1"
+	if labenv == "LAB"
+		config.vm.provision :shell, :inline => "sudo ip r change default via 10.3.222.1"
+	end
 
     #config.vm.provision :ansible do |ansible|
     #    ansible.host_key_checking = false
