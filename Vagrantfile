@@ -1,12 +1,24 @@
 # -*- mode: ruby -*-
 # vi: set ft=ruby :
 
-
+require 'socket'
 
 Vagrant.configure("2") do |config|
 
-	# Check environment variable to difine a particular deployment
-	labenv=ENV[LABENV]
+	# Check environment variable to define a particular deployment
+	labhosts = Hash["lab1" => "10.3.222.61",
+		            "lab2" => "10.3.222.62",
+		            "lab3" => "10.3.222.63",
+		            "lab4" => "10.3.222.64",
+		            "lab5" => "10.3.222.65",
+		            "lab6" => "10.3.222.66",
+		            "lab7" => "10.3.222.67",
+		            "lab8" => "10.3.222.68",
+		            "lab9" => "10.3.222.69",
+		            "lab10" => "10.3.222.70"]
+
+	labenv=ENV["LABENV"]
+	hostname = Socket.gethostbyname(Socket.gethostname).first.split(".").first
 
 	memory=6144
 	cpu=2
@@ -19,7 +31,13 @@ Vagrant.configure("2") do |config|
     config.vm.box = "ubuntu/trusty64"
     config.ssh.forward_agent = true
     # eth1, this will be the endpoint
-    config.vm.network :private_network, ip: "192.168.27.100"
+		config.vm.network :private_network, ip: "192.168.27.100"
+
+	if labenv == "LAB"
+		config.vm.network :public_network, ip: labhosts[hostname] 
+	else
+		config.vm.network :private_network, ip: "192.168.27.100"
+	end
 
     # eth2, this will be the OpenStack "public" network
     # ip and subnet mask should match floating_ip_range var in devstack.yml
