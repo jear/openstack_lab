@@ -50,10 +50,8 @@ Vagrant.configure("2") do |config|
         vb.customize ["modifyvm", :id, "--cpus", cpu]
         # eth2 must be in promiscuous mode for floating IPs to be accessible
         vb.customize ["modifyvm", :id, "--nicpromisc3", "allow-all"]
-u		if labenv == "LAB"
-		    vb.customize ['createhd', '--filename', file_to_disk, '--size', 100 * 1024]
-		    vb.customize ['storageattach', :id, '--storagectl', 'SATA Controller', '--port', 1, '--device', 0, '--type', 'hdd', '--medium', file_to_disk]
-		end
+	    vb.customize ['createhd', '--filename', file_to_disk, '--size', 100 * 1024]
+	    vb.customize ['storageattach', :id, '--storagectl', 'SATA Controller', '--port', 1, '--device', 0, '--type', 'hdd', '--medium', file_to_disk]
     end
 
     # default router
