@@ -22,21 +22,21 @@ Vagrant.configure("2") do |config|
 
 	memory=6144
 	cpu=2
+	ctrl_ip = "192.168.27.100"
 
 	if labenv == "LAB"
 		memory=12288
 		cpu=4
+		ctrl_ip = labhosts[hostname]
 	end
 
     config.vm.box = "ubuntu/trusty64"
     config.ssh.forward_agent = true
     # eth1, this will be the endpoint
-		config.vm.network :private_network, ip: "192.168.27.100"
-
 	if labenv == "LAB"
-		config.vm.network :public_network, ip: labhosts[hostname] 
+		config.vm.network :public_network, ip: ctrl_ip
 	else
-		config.vm.network :private_network, ip: "192.168.27.100"
+		config.vm.network :private_network, ip: ctrl_ip
 	end
 
     # eth2, this will be the OpenStack "public" network
@@ -56,14 +56,14 @@ Vagrant.configure("2") do |config|
 		config.vm.provision :shell, :inline => "sudo ip r change default via 10.3.222.1"
 	end
 
-    #config.vm.provision :ansible do |ansible|
-    #    ansible.host_key_checking = false
-    #    ansible.playbook = "devstack.yml"
-    #    ansible.verbose = "v"
-    #end
+    config.vm.provision :ansible do |ansible|
+        ansible.host_key_checking = false
+        ansible.playbook = "devstack.yml"
+        ansible.verbose = "v"
+	    ansible.extra_vars = "{ ctrl_ip: #{ ctrl_ip } }"
+    end
     #config.vm.provision :shell, :inline => "cd devstack; sudo -u vagrant env HOME=/home/vagrant ./stack.sh"
     #config.vm.provision :shell, :inline => "ovs-vsctl add-port br-ex eth2"
     #config.vm.provision :shell, :inline => "virsh net-destroy default"
-
 
 end
