@@ -9,5 +9,5 @@ glance image-create \
     --disk-format=qcow2 --container-format=bare \
     --property architecture=x86_64 \
     --progress \
-    --file images/debian-8.0.0-openstack-amd64.qcow2
+    --file images/debian-8.5.0-openstack-amd64.qcow2
 
