@@ -18,6 +18,7 @@ openstack flavor delete m1.small
 openstack flavor delete m1.medium
 openstack flavor delete m1.large
 openstack flavor delete m1.xlarge
+sleep 10s
 
 # Create flavor
 nova flavor-create m1.tiny 1 512 1 1
