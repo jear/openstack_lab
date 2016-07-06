@@ -32,7 +32,7 @@ then
 fi
 
 # Get the lab bits
-pdsh -R ssh -w ^labhosts.txt "apt-get install -y git ansible vagrant virtualbox pdsh"
+pdsh -R ssh -w ^labhosts.txt "apt-get install -y git ansible vagrant virtualbox pdsh python-glanceclient python-nova-adminclient"
 pdsh -R ssh -w ^labhosts.txt "vagrant box add ubuntu/trusty64 https://cloud-images.ubuntu.com/vagrant/trusty/current/trusty-server-cloudimg-amd64-vagrant-disk1.box"
 pdsh -R ssh -w ^labhosts.txt "git clone https://github.com/uggla/openstack_lab.git"
 
