@@ -2,7 +2,7 @@
 
 # Post configuration of our lab to make it more convenient for students
 
-source admin.openrc
+source labadmin.openrc
 
 glance image-create \
     --name="Debian Jessie 64-bit" \
