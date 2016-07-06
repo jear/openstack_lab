@@ -36,9 +36,12 @@ Vagrant.configure("2") do |config|
 		cpu=4
 		fipr = "172.24.#{ labnum}.0/24"
 		pip = "172.24.#{ labnum}.225"
+		pgw = "172.24.#{ labnum}.1"
 		param = Hash["ctrl_ip" => labhosts[hostname],
 					 "floating_ip_range" => fipr,
-					 "public_ip" => pip]
+					 "public_ip" => pip,
+					 "public_gw" => pgw,
+					 "labenv" => True]
 		file_to_disk = './tmp/large_disk.vdi'
 	end
 
@@ -88,5 +91,7 @@ Vagrant.configure("2") do |config|
     config.vm.provision :shell, :inline => "cd devstack; sudo -u vagrant env HOME=/home/vagrant ./stack.sh"
     config.vm.provision :shell, :inline => "ovs-vsctl add-port br-ex eth2"
     config.vm.provision :shell, :inline => "virsh net-destroy default"
+
+	# Tuning of openstack for lab
 
 end

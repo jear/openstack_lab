@@ -14,6 +14,12 @@ HOST_IP={{ ctrl_ip }}
 
 FLOATING_RANGE={{ floating_ip_range }}
 
+{% if labenv}
+PUBLIC_NETWORK_GATEWAY={{ public_gw }}
+INSTANCES_PATH=/instances
+DATA_DIR=/instances/data
+{% endif %}
+
 {% if neutron %}
 #
 # Enable Neutron
