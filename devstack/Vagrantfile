@@ -95,5 +95,9 @@ Vagrant.configure("2") do |config|
     config.vm.provision :shell, :inline => "ovs-vsctl add-port br-ex eth2"
     config.vm.provision :shell, :inline => "virsh net-destroy default"
 	config.vm.provision :shell, :inline => "ip r del 10.0.0.0/24 via 172.24.10.2"
-	config.vm.provision :shell, :inline => "iptables -t nat -A POSTROUTING -o eth1 -j MASQUERADE"
+	if labenv == "LAB"
+		config.vm.provision :shell, :inline => "iptables -t nat -A POSTROUTING -o eth1 -j MASQUERADE"
+	else
+		config.vm.provision :shell, :inline => "iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE"
+	end
 end
