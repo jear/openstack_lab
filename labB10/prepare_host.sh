@@ -18,7 +18,8 @@ read -s sshpwd
 for lab in $(cat labhosts.txt)
 do
 	ssh-keygen -R $lab
-	echo "$sshpwd" | sshpass ssh-copy-id $lab 
+	ssh-keyscan -t rsa $lab | cat >> ~/.ssh/known_hosts
+	echo "$sshpwd" | sshpass ssh-copy-id $lab
 done
 
 pdsh -R ssh -w ^labhosts.txt uname -a
