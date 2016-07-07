@@ -7,6 +7,7 @@
     #floating_ip_range: 172.24.4.0/24 should now come from Vagrantfile
     #labenv: True comes from Vagrantfile
     #public_gw:172.24.x.1 comes from Vagrantfile
+    #floating_pool comes from Vagrantfile
     heat: True
     neutron: True
     neutron_lbaasv2: False

@@ -9,21 +9,30 @@ needing to the ssh into the Vagrant box first.
 Ansible generates a `local.conf` file that defaults to:
 
  * Use Neutron for networking
- * Disable security groups
+ * Enable security groups
+ * Enable heat
+ * Enable swift
  * No Application Catalog
 
-You can enable Swift, Heat, Application Catalog and security groups
+You can enable/disable Swift, Heat, Application Catalog and security groups
 by editing the devstack.yml file.
 
-This project was inspired by Brian Waldon's [vagrant_devstack][1] repository.
+This project customized Lorin Hochstein [lorin_devstack][7] repository.
+
+Main customization allows to deploy seamlessly on our lab environment.
+
+
+This project original repository was inspired by Brian Waldon's [vagrant_devstack][1] repository.
 
 ## Memory usage
 
-By default, the VM uses 4GB of RAM and 2 cpus. If you want to change this, edit the
+By default, the VM uses 6GB of RAM and 2 cpus. If you want to change this, edit the
 following lines in Vagrantfile:
 
         vb.customize ["modifyvm", :id, "--memory", 4096]
         vb.customize ["modifyvm", :id, "--cpus", 2]
+
+For the lab, the VM uses 12GB and 4 cpus.
 
 ## Prereqs
 
@@ -60,27 +69,9 @@ The `vagrant up` command will:
  3. Clone the DevStack git repository inside of the VM.
  4. Run DevStack inside of the VM.
  5. Add eth2 to the br-ex bridge inside of the VM to enable floating IP access from the host machine.
+ 6. Allow vm to go to the internet
 
-It will take at least ten minutes for this to run, and possibly much longer depending on your internet connection and whether it needs to download the Ubuntu vagrant box.
-
-
-
-## Troubleshooting
-
-### Fails to connect
-
-You may ocassionally see the following error message:
-
-```
-[default] Waiting for VM to boot. This can take a few minutes.
-[default] Failed to connect to VM!
-Failed to connect to VM via SSH. Please verify the VM successfully booted
-by looking at the VirtualBox GUI.
-```
-
-If you see this, retry by doing:
-
-    vagrant destroy --force && vagrant up
+It will take at least fifteen minutes for this to run, and possibly much longer depending on your internet connection and whether it needs to download the Ubuntu vagrant box.
 
 
 ## Logging in the virtual machine
@@ -243,3 +234,4 @@ iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE
 [4]: http://devstack.org
 [5]: http://virtualbox.org
 [6]: http://blog.nasmart.me/internet-access-with-virtualbox-host-only-networks-on-os-x-mavericks/
+[7]: https://github.com/lorin/devstack-vm
