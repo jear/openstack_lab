@@ -63,3 +63,22 @@
       remote_user: stack
       args:
         chdir: devstack
+
+    - name: Cherry pick path (https://review.openstack.org/#/c/336919/)
+      shell: git fetch https://git.openstack.org/openstack-dev/devstack refs/changes/19/336919/1 && git cherry-pick FETCH_HEAD
+
+    - name: Deploy devstack (Stack !!!)
+      shell: ./stack.sh
+      remote_user: stack
+      args:
+        chdir: devstack
+
+    - name: Remove route to br-int
+      shell: ip r del 10.0.0.0/24 via {{ vrgw }}
+
+    - name: Get interface name
+      shell: ip a | grep -B 2 10.3.222 | grep -P "^\d+:" | awk '{print $2}' | sed 's/://'
+      register: interface
+
+    - name: Allow devstack vm to access internet
+      shell: iptables -t nat -A POSTROUTING -o {{ interface }} -j MASQUERADE
