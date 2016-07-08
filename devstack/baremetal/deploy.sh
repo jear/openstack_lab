@@ -11,4 +11,4 @@ floating_pool="start=172.24.$labnum.10,end=172.24.$labnum.100"
 labenv="True"
 vrgw="172.24.$labnum.10"
 
-ansible-playbook -vvvv -i inventory -e floating_ip_range=$floating_ip_range -e public_gw=$public_gw -e floating_pool=$floating_pool -e labenv=$labenv -e vrgw=$vrgw baremetal.yml
+ansible-playbook -v -i inventory -e floating_ip_range=$floating_ip_range -e public_gw=$public_gw -e floating_pool=$floating_pool -e labenv=$labenv -e vrgw=$vrgw baremetal.yml

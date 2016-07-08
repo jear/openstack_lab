@@ -6,11 +6,18 @@
 
   tasks:
     - name: create devstack user
-      user: name=devstack comment="Devstack user" shell=/bin/bash generate_ssh_key=yes ssh_key_bits=2048
+      user: name=stack comment="Devstack user" shell=/bin/bash generate_ssh_key=yes ssh_key_bits=2048
 
     - name: allow sudo for devstack user
       lineinfile: "dest=/etc/sudoers regexp='^stack' line='stack ALL=(ALL) NOPASSWD: ALL'"
+    
+    - name: add key to user stack
+      shell: cat /home/stack/.ssh/id_rsa.pub >> /home/stack/.ssh/authorized_keys
+    
+    - name: Correct ownership
+      shell: chown stack:stack /home/stack/.ssh/authorized_keys
 
     - name: devstack common part
       include: ../common/devstack.yml
+      remote_user: stack
 
