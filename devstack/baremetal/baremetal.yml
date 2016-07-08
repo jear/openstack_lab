@@ -11,8 +11,8 @@
     - name: allow sudo for devstack user
       lineinfile: "dest=/etc/sudoers regexp='^stack' line='stack ALL=(ALL) NOPASSWD: ALL'"
     
-    - name: add key to user stack
-      shell: cat /home/stack/.ssh/id_rsa.pub >> /home/stack/.ssh/authorized_keys
+    - name: add root key to user stack
+      shell: cat ~/.ssh/id_rsa.pub >> /home/stack/.ssh/authorized_keys
     
     - name: Correct ownership
       shell: chown stack:stack /home/stack/.ssh/authorized_keys
