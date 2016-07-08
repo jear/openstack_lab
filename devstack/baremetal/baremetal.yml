@@ -9,6 +9,6 @@
       user: name=devstack comment="Devstack user" shell=/bin/bash generate_ssh_key=yes ssh_key_bits=2048
 
     - name: allow sudo for devstack user
-      lineinfile: dest=/etc/sudoers regexp="^stack" line="stack ALL=(ALL) NOPASSWD: ALL"
+      lineinfile: "dest=/etc/sudoers regexp='^stack' line='stack ALL=(ALL) NOPASSWD: ALL'"
 
 
