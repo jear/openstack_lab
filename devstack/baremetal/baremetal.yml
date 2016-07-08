@@ -17,7 +17,6 @@
     swift: True
     security_groups: True
     tempest: False
-    keyring_config_dir: /home/vagrant/.local/share/python_keyring
     app_catalog: False
     baremetal: True
 
@@ -43,7 +42,7 @@
       remote_user: stack
 
     - name: source openrc in profile
-      lineinfile: dest=/home/stack/.bashrc regexp=".*openrc" line='. /home/vagrant/devstack/openrc'
+      lineinfile: dest=/home/stack/.bashrc regexp=".*openrc" line='. /home/stack/devstack/openrc'
       remote_user: stack
 
     - name: Git user definition
@@ -78,4 +77,4 @@
       register: interface
 
     - name: Allow devstack vm to access internet
-      shell: iptables -t nat -A POSTROUTING -o {{ interface }} -j MASQUERADE
+      shell: iptables -t nat -A POSTROUTING -o {{ interface.stdout }} -j MASQUERADE
