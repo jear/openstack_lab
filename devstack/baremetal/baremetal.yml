@@ -64,9 +64,6 @@
       args:
         chdir: devstack
 
-    - name: Cherry pick path (https://review.openstack.org/#/c/336919/)
-      shell: git fetch https://git.openstack.org/openstack-dev/devstack refs/changes/19/336919/1 && git cherry-pick FETCH_HEAD
-
     - name: Deploy devstack (Stack !!!)
       shell: ./stack.sh
       remote_user: stack
