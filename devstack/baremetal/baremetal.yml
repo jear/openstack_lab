@@ -1,0 +1,14 @@
+- name: Deploy devstack on baremetal
+  hosts: all
+  gather_facts: False
+  remote_user: root
+
+
+  tasks:
+    - name: create devstack user
+      user: name=devstack comment="Devstack user" shell=/bin/bash generate_ssh_key=yes ssh_key_bits=2048
+
+    - name: allow sudo for devstack user
+      lineinfile: dest=/etc/sudoers regexp="^stack" line="stack ALL=(ALL) NOPASSWD: ALL"
+
+
