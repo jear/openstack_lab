@@ -5,12 +5,12 @@
 
   vars:
     devstack_repo: git://github.com/openstack-dev/devstack.git
-    #ctrl_ip: 192.168.27.100 should now come from Vagrantfile
+    #ctrl_ip: 192.168.27.100 should now come from deploy.sh
     version: stable/mitaka
-    #floating_ip_range: 172.24.4.0/24 should now come from Vagrantfile
-    #labenv: True comes from Vagrantfile
-    #public_gw:172.24.x.1 comes from Vagrantfile
-    #floating_pool comes from Vagrantfile
+    #floating_ip_range: 172.24.4.0/24 should now come from deploy.sh
+    #labenv: True comes from deploy.sh
+    #public_gw:172.24.x.1 comes from deploy.sh
+    #floating_pool comes from deploy.sh
     heat: True
     neutron: True
     neutron_lbaasv2: False
@@ -50,16 +50,16 @@
       command: git config --global user.name "Uggla"
       remote_user: stack
       args:
-        chdir: stack
+        chdir: devstack
 
     - name: Git user definition
       command: git config --global user.email "uggla@free.fr"
       remote_user: stack
       args:
-        chdir: stack
+        chdir: devstack
 
     - name: Cherry pick path (https://review.openstack.org/#/c/336919/)
       shell: git fetch https://git.openstack.org/openstack-dev/devstack refs/changes/19/336919/1 && git cherry-pick FETCH_HEAD
       remote_user: stack
       args:
-        chdir: stack
+        chdir: devstack
