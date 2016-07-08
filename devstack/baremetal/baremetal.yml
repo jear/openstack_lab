@@ -11,4 +11,6 @@
     - name: allow sudo for devstack user
       lineinfile: "dest=/etc/sudoers regexp='^stack' line='stack ALL=(ALL) NOPASSWD: ALL'"
 
+    - name: devstack common part
+      include: ../common/devstack.yml
 
