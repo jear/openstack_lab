@@ -1,8 +1,5 @@
-- name: Deploy devstack on baremetal
-  hosts: all
-  gather_facts: False
-  remote_user: root
-
+---
+- hosts: default
   vars:
     devstack_repo: git://github.com/openstack-dev/devstack.git
     #ctrl_ip: 192.168.27.100 should now come from Vagrantfile
@@ -21,18 +18,5 @@
     app_catalog: False
 
   tasks:
-    - name: create devstack user
-      user: name=stack comment="Devstack user" shell=/bin/bash generate_ssh_key=yes ssh_key_bits=2048
-
-    - name: allow sudo for devstack user
-      lineinfile: "dest=/etc/sudoers regexp='^stack' line='stack ALL=(ALL) NOPASSWD: ALL'"
-    
-    - name: add root key to user stack
-      shell: cat ~/.ssh/id_rsa.pub >> /home/stack/.ssh/authorized_keys
-    
-    - name: Correct ownership
-      shell: chown stack:stack /home/stack/.ssh/authorized_keys
-
     - name: devstack common part
       include: ../common/devstack.yml
-

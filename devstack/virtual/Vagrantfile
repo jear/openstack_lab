@@ -87,7 +87,7 @@ Vagrant.configure("2") do |config|
 
     config.vm.provision :ansible do |ansible|
         ansible.host_key_checking = false
-		ansible.playbook = "../common/devstack.yml"
+		ansible.playbook = "virtual.yml"
         ansible.verbose = "v"
 	    ansible.extra_vars = param
     end
