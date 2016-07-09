@@ -64,7 +64,7 @@
         chdir: devstack
 
     - name: Deploy devstack (Stack !!!)
-      shell: ./stack.sh
+      shell: echo "SWIFT" | ./stack.sh
       remote_user: stack
       args:
         chdir: devstack
