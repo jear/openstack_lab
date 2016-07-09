@@ -82,6 +82,6 @@ pdsh -R ssh -w ^labhosts.txt "sed -ri '/bash_completion/,/fi/ s/^#//' .bashrc" #
 pdsh -R ssh -w ^labhosts.txt 'cat /dev/zero | ssh-keygen -q -N ""; ls -al ~/.ssh/id_rsa'
 pdsh -R ssh -w ^labhosts.txt 'cat ~/.ssh/id_rsa.pub >> ~/.ssh/authorized_keys'
 
-# Get debian cloud image
-#pdsh -R ssh -w ^labhosts.txt "cd openstack_lab/devstack/images && wget http://cdimage.debian.org/cdimage/openstack/8.5.0/debian-8.5.0-openstack-amd64.qcow2"
-
+echo "Your host should be ready to be deployed !"
+echo "Run to continue:"
+echo "pdsh -R ssh -w ^labhosts.txt 'cd openstack_lab/devstack/baremetal && ./deploy.sh'"
