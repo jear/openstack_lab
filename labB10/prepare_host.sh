@@ -72,7 +72,7 @@ pdsh -R ssh -w ^labhosts.txt "echo 'deb-src http://ppa.launchpad.net/ansible/ans
 pdsh -R ssh -w ^labhosts.txt "gpg --ignore-time-conflict --no-options --no-default-keyring --secret-keyring /etc/apt/secring.gpg --trustdb-name /etc/apt/trustdb.gpg --keyring /etc/apt/trusted.gpg --primary-keyring /etc/apt/trusted.gpg --keyserver hkp://keyserver.ubuntu.com:80 --recv 6125E2A8C77F2818FB7BD15B93C4A3FD7BB9C367"
 
 pdsh -R ssh -w ^labhosts.txt "apt-get update"
-pdsh -R ssh -w ^labhosts.txt "apt-get install -y git ansible pdsh python-glanceclient python-novaclient python-openstackclient python-pip libpython2.7-dev"
+pdsh -R ssh -w ^labhosts.txt "apt-get install -y git ansible pdsh python-glanceclient python-novaclient python-openstackclient python-pip libpython2.7-dev xz-utils"
 pdsh -R ssh -w ^labhosts.txt "git clone https://github.com/uggla/openstack_lab.git"
 pdsh -R ssh -w ^labhosts.txt "pip install -U pip"
 pdsh -R ssh -w ^labhosts.txt "pip install -U pbr"
@@ -83,12 +83,17 @@ pdsh -R ssh -w ^labhosts.txt "sed -ri '/bash_completion/,/fi/ s/^#//' .bashrc" #
 pdsh -R ssh -w ^labhosts.txt 'cat /dev/zero | ssh-keygen -q -N ""; ls -al ~/.ssh/id_rsa'
 pdsh -R ssh -w ^labhosts.txt 'cat ~/.ssh/id_rsa.pub >> ~/.ssh/authorized_keys'
 
+echo ""
+echo "******************************************"
 echo "Your host should be ready to be deployed !"
+echo "******************************************"
 echo "Run to continue:"
 if [ "$platform" == "virtual" ]
 then
-	echo "pdsh -R ssh -w ^labhosts.txt 'cd openstack_lab/devstack/virtual && vagrant up'"
+	echo "1) pdsh -R ssh -w ^labhosts.txt 'cd openstack_lab/devstack/virtual && vagrant up'"
+	echo "2) pdsh -R ssh -w ^labhosts.txt 'cd openstack_lab/devstack/common && ./post_config.sh'"
 else
-	echo "pdsh -R ssh -w ^labhosts.txt 'cd openstack_lab/devstack/baremetal && ./deploy.sh'"
+	echo "1) pdsh -R ssh -w ^labhosts.txt 'cd openstack_lab/devstack/baremetal && ./deploy.sh'"
+	echo "2) pdsh -R ssh -w ^labhosts.txt 'cd openstack_lab/devstack/common && ./post_config.sh'"
 fi
 
