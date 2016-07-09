@@ -62,6 +62,7 @@ fi
 if [ "$platform" == "virtual" ]
 then
 	pdsh -R ssh -w ^labhosts.txt "apt-get install -y vagrant virtualbox"
+	pdsh -R ssh -w ^labhosts.txt "ls .vagrant.d/boxes/ubuntu/0/trusty64" || \
 	pdsh -R ssh -w ^labhosts.txt "vagrant box add ubuntu/trusty64 https://cloud-images.ubuntu.com/vagrant/trusty/current/trusty-server-cloudimg-amd64-vagrant-disk1.box"
 fi
 
@@ -84,4 +85,10 @@ pdsh -R ssh -w ^labhosts.txt 'cat ~/.ssh/id_rsa.pub >> ~/.ssh/authorized_keys'
 
 echo "Your host should be ready to be deployed !"
 echo "Run to continue:"
-echo "pdsh -R ssh -w ^labhosts.txt 'cd openstack_lab/devstack/baremetal && ./deploy.sh'"
+if [ "$platform" == "virtual" ]
+then
+	echo "pdsh -R ssh -w ^labhosts.txt 'cd openstack_lab/devstack/virtual && vagrant up'"
+else
+	echo "pdsh -R ssh -w ^labhosts.txt 'cd openstack_lab/devstack/baremetal && ./deploy.sh'"
+fi
+
