@@ -1,16 +1,48 @@
 #!/bin/bash
 
 # Post configuration of our lab to make it more convenient for students
+cd $(dirname $0)
+currentdir=$(pwd)
+ps -ef | grep [V]BoxHeadless && virtual=yes
 
-source labadmin.openrc
+if [ "$virtual" == "yes" ]
+then
+	cd ../virtual
+	pwd
+	source ./admin.openrc
+	cd $currentdir
+else
+	cd ../baremetal
+	source ./admin.openrc
+	cd $currentdir
+fi
 
 # Load debian image
-glance image-create \
-    --name="Debian Jessie 64-bit" \
-    --disk-format=qcow2 --container-format=bare \
-    --property architecture=x86_64 \
-    --progress \
-    --file images/debian-8.5.0-openstack-amd64.qcow2
+cd ../images
+if [ ! -f debian-8.5.0-openstack-amd64.qcow2 ]
+then
+	wget http://cdimage.debian.org/cdimage/openstack/8.5.0/debian-8.5.0-openstack-amd64.qcow2
+	glance image-create \
+		--name="Debian Jessie 64-bit" \
+		--disk-format=qcow2 --container-format=bare \
+		--property architecture=x86_64 \
+		--progress \
+		--file debian-8.5.0-openstack-amd64.qcow2
+fi
+
+# Load Centos 6 image
+cd ../images
+if [ ! -f CentOS-6-x86_64-GenericCloud.qcow2 ]
+then
+	wget http://cloud.centos.org/centos/6/images/CentOS-6-x86_64-GenericCloud.qcow2.xz
+	xz -dv CentOS-6-x86_64-GenericCloud.qcow2.xz
+	glance image-create \
+		--name="CentOS 6" \
+		--disk-format=qcow2 --container-format=bare \
+		--property architecture=x86_64 \
+		--progress \
+		--file CentOS-6-x86_64-GenericCloud.qcow2
+fi
 
 # Remove all flavor
 openstack flavor delete m1.tiny

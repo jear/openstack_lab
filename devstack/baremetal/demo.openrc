@@ -1,0 +1,5 @@
+export OS_USERNAME="demo"
+export OS_PASSWORD="password"
+export OS_TENANT_NAME="demo"
+export OS_AUTH_URL="http://$(ip a | grep "10.3.222" | awk '{print $2}' | sed 's#/24##'):5000/v2.0"
+export OS_REGION_NAME=""
