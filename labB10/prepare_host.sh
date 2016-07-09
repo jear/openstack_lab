@@ -43,8 +43,8 @@ read -s sshpwd
 
 for lab in $(cat labhosts.txt)
 do
-	ssh-keygen -R $lab
-	ssh-keyscan -t rsa $lab | cat >> ~/.ssh/known_hosts
+	ssh-keygen -R $(echo $lab | sed -r 's/.+@//g')
+	ssh-keyscan -t rsa $(echo $lab | sed -r 's/.+@//g') | cat >> ~/.ssh/known_hosts
 	echo "$sshpwd" | sshpass ssh-copy-id $lab
 done
 
@@ -82,6 +82,7 @@ pdsh -R ssh -w ^labhosts.txt 'sed -ri "\$a export EDITOR=vim" .bashrc'  # Use vi
 pdsh -R ssh -w ^labhosts.txt "sed -ri '/bash_completion/,/fi/ s/^#//' .bashrc" # Add bash completion
 pdsh -R ssh -w ^labhosts.txt 'cat /dev/zero | ssh-keygen -q -N ""; ls -al ~/.ssh/id_rsa'
 pdsh -R ssh -w ^labhosts.txt 'cat ~/.ssh/id_rsa.pub >> ~/.ssh/authorized_keys'
+pdsh -R ssh -w ^labhosts.txt "ssh-keyscan -t rsa localhost | cat >> ~/.ssh/known_hosts"
 
 echo ""
 echo "******************************************"
