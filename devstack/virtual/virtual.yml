@@ -36,7 +36,7 @@
       git: repo={{ devstack_repo }} dest=/home/vagrant/devstack version={{ version }} accept_hostkey=yes
 
     - name: local.conf
-      template: src=templates/local.conf.j2 dest=/home/vagrant/devstack/local.conf
+      template: src=../common/templates/local.conf.j2 dest=/home/vagrant/devstack/local.conf
 
     - name: source openrc in profile
       lineinfile: dest=/home/vagrant/.profile regexp=".*openrc" line='. /home/vagrant/devstack/openrc'
@@ -45,10 +45,6 @@
       command: ip link set dev eth2 up
       sudo: True
 
-  #    - name: Add os-testr dep (https://bugs.launchpad.net/devstack/+bug/1547379) 
-  #    pip: name=os-testr
-  #    sudo: True
-  #
     - name: Git user definition
       command: git config --global user.name "Uggla"
       args:
@@ -63,5 +59,4 @@
       shell: git fetch https://git.openstack.org/openstack-dev/devstack refs/changes/19/336919/1 && git cherry-pick FETCH_HEAD
       args:
         chdir: devstack
-        creates: patched.step
 

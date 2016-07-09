@@ -29,7 +29,10 @@ Vagrant.configure("2") do |config|
 	cpu=2
 	param = Hash["ctrl_ip" => "192.168.27.100",
 	             "floating_ip_range" => "172.24.4.0/24",
-				 "public_ip" => "172.24.4.225"]
+				 "public_ip" => "172.24.4.225",
+				 "floating_pool" => "start=172.24.4.10,end=172.24.4.100",
+				 "public_gw" => "172.24.4.254",
+				 "labenv" => "True"]
 
 	if labenv == "LAB"
 		memory=12288
@@ -87,7 +90,7 @@ Vagrant.configure("2") do |config|
 
     config.vm.provision :ansible do |ansible|
         ansible.host_key_checking = false
-        ansible.playbook = "devstack.yml"
+		ansible.playbook = "virtual.yml"
         ansible.verbose = "v"
 	    ansible.extra_vars = param
     end
