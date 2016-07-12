@@ -5,7 +5,7 @@ vmip=""
 
 while [ -z "$vmip" ]
 do
-	vmip=$(openstack server show internalvm -f json | jq .addresses | perl -pe 's#.*\s(\d+\.\d+\.\d+\.\d+).*#\1#g')
+	vmip=$(openstack server show internalvm -f json | jq .addresses | perl -pe 's#.*\s(\d+\.\d+\.\d+\.\d+).*#\1#g' | sed 's/"//g')
 	sleep 5s
 done
 
