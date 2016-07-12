@@ -76,8 +76,8 @@ pdsh -R ssh -w ^labhosts.txt "apt-get install -y git ansible pdsh python-glancec
 pdsh -R ssh -w ^labhosts.txt "git clone https://github.com/uggla/openstack_lab.git"
 pdsh -R ssh -w ^labhosts.txt "pip install -U pip"
 pdsh -R ssh -w ^labhosts.txt "pip install -U pbr"
-pdsh -R ssh -w ^labhosts.txt "pip install -U shade"
 pdsh -R ssh -w ^labhosts.txt "pip install -U os_client_config"
+pdsh -R ssh -w ^labhosts.txt "pip install -U shade"
 pdsh -R ssh -w ^labhosts.txt 'sed -ri "\$a export EDITOR=vim" .bashrc'  # Use vim instead of nano
 pdsh -R ssh -w ^labhosts.txt "sed -ri '/bash_completion/,/fi/ s/^#//' .bashrc" # Add bash completion
 pdsh -R ssh -w ^labhosts.txt 'cat /dev/zero | ssh-keygen -q -N ""; ls -al ~/.ssh/id_rsa'
