@@ -11,4 +11,4 @@ do
 	sleep 5s
 done
 
-ssh-keyscan $pubip >> ~/.ssh/authorized_keys
+ssh-keyscan $pubip >> ~/.ssh/known_hosts
