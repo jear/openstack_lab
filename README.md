@@ -91,7 +91,7 @@ Here is the lab environment:
 
 Ok, we should now have internet available on our deployed instances. Let's continue and verify our fix is working fine.
 
-### Deploy using python script, cli
+### Deploy using python script and cli
 
 We used horizon to deploy our first instance, this is cool, but it's still needs human intervention to do that.
 However horizon is using the API and it is doing API calls in the background to the Openstack REST API.
@@ -103,7 +103,7 @@ So as an example, we will use a python script that will do the same things we di
 3. Edit `boot_cirros.py` file and change the line `auth_url = "http://192.168.27.100:35357/v2.0"` to point to your own endpoint.
 4. Execute the script:
  python ./boot_cirros.py
-![boot_cirros](img/boot_cirros.py.png)
+![boot_cirros](img/boot_cirros_py.png)
 5. Check the result on the horizon console. Quite cool isn't it ?
 6. Connect  to your new instance using ssh and keys.
 7. **Check if you can resolv internet addresses. If not, you failed in fixing the above issue and you just need to do it again or call the trainer if you are stuck.**
@@ -131,6 +131,42 @@ All the VM deployed on the private network cannot be reached from outside, unles
 In order to make our automation easier not mapping/unmapping floating ip, we will deploy a bastion waystation that will relay ssh to the internal networks. This is also more secured, because we will expose from the outside of or cloud only the VMs that really require external access.
 
 1. Jump into ~/openstack_lab/bastion
+2. Launch `./bastion.sh`, it will deploy our bastion waystation attached to a floating ip.
+3. Launch `./insternalvm.sh`, it will deploy a VM on private network only. Note : these are debian instances, so login: debian.
+4. Connect first to the bastion waystation, then to the VM on the private network. You may experience some issue connecting to the VM on the private network.
+![bastion_noagent](img/bastion_noagent.png)
+5. The issue is due to ssh agent forwarding not loaded and default settings.
+6. Load ssh-agent `eval $(ssh-agent)` and add key `ssh-add`.
+7. Change the `/etc/ssh/ssh_config` setting to `ForwardAgent yes`.
+8. Try to connect again, this should now work.
+![bastion_agent](img/bastion_agent.png)
 
+At that point, we can join our VM located on the private network, we will now configure the ssh proxy command. So we will be able to use ssh as usual and it will proxy our connection to the bastion host in the background.
+
+1. To not use the proxy all the time, we will create a dedicated ssh_config client configuration. Copy your existing ssh_config: `cp /etc/ssh/ssh_config .`
+2. Edit the local ssh_config file changing ProxyCommand to `ProxyCommand ssh -q -W %h:%p debian@172.24.9.24` of course ip should be your own bastion ip.
+3. Try to connect directly to the VM on the internal subnet: `ssh -v -F ssh_config debian@10.0.0.37`, here we will use `-v` to show some debug message ensuring we are going through the proxy.
+![bastion_proxy](img/bastion_proxy.png)
+
+
+### Deploy Prestashop
+
+We will now deploy an application, we will use Prestashop as an example. This is a php/mysql application.
+
+We will deploy the following infrastructure:
+
+* 1 x network to host our servers.
+* 1 x security group associated that will allow ssh from private network to the Prestoshop one and http from outside.
+* 1 x server apache + php engine.
+* 1 x server mysql database.
+* 1 x floating ip to the server.
+
+Of course we could use a lot of tools to deploy our application (bash script, puppet, HPOO, cloudslang). Here we will choose:
+* Heat, Openstack orchestration service to deploy the "infrastructure".
+* Ansible, configuration management tool, to configure our servers according to our policies (packages, configuration files, ...).
+
+Again, this is an implementation choice to show you 2 different tools. But combining those tools make sens and make the deployment convenient. (this is also because the author likes them ! ;) )
+
+#### Configure ansible to use server names
 
 
