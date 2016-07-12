@@ -1,4 +1,3 @@
-
 # Work In Progress !
 
 # Openstack and cloud native application
@@ -22,6 +21,19 @@ Expected duration for each part is : 240 minutes.
 
 <!--- [comment]: # Table of Content to be added --->
 
+## Prerequisites
+
+In order to follow this lab, you need to :
+
+Part one :
+* Be familiar with Linux.
+* Have knowledge with IAAS and Openstack (follow our colleagues Openstack training).
+* Have a few network knowledge.
+
+Part two :
+* Be familiar with Linux.
+* Have knowledge with IAAS and Openstack.
+* Some knowledge in the development world.
 
 ## Objectives of Lab
 At the end of the Lab part one, students should be able to understand automation concept and be able to do their own automation scenario.
@@ -43,7 +55,7 @@ Estimated time for the lab is placed in front of each part.
 # The infrastructure driven API (part 1)
 
 
-### 2 words on Openstack
+## 2 words about Openstack
 
 Openstack is a cloud solution to implement Infrastructure As A Service solution.
 
@@ -55,11 +67,57 @@ Key strengths :
 
 * Opensource, all piece of code can be used, seen, modified.
 
-## Environment description
+## Lab environment description
 
-Openstack suppliers (HPE, Redhat, Mirantis etc...) will bundle openstack upstream projects and create an Openstack distribution.
+Openstack suppliers (HPE, Redhat, Mirantis etc...) will bundle Openstack upstream projects and create an Openstack distribution.
 
 The one used in our lab is the devstack, this is "distribution" intended to develop Openstack.
 
-In our lab we will use the devstack
+Here is the lab environment:
+(do not forget to mention DNS)
+
+
+## Stop talking, get our hands dirty !
+
+### Minimal checks of the platform
+
+1. Connect to the horizon console.
+2. Deploy a cirros tiny instance using your lab station ssh key called myinstance.
+3. Create a floating ip associated to your instance.
+4. Connect  to your instance using ssh and keys (login: cirros).
+5. Check if you can ping an internet ip address (8.8.8.8), try with a fqdn (google.fr). Something should be wrong here, try to permanently fix that issue, and follow next steps to validate it. (hint update nw settings).
+
+Ok, we should now have internet available on our deployed instances. Let's continue and verify our fix is working fine.
+
+### Deploy using python script, cli
+
+We used horizon to deploy our first instance, this is cool, but it's still needs human intervention to do that.
+However horizon is using the API and it is doing API calls in the background to the Openstack REST API.
+
+So as an example, we will use a python script that will do the same things we did manually. The script will use python modules to interact with the REST API.
+
+1. Connect to your lab controller using ssh.
+2. Jump into the openstack_lab/devstack/common directory.
+3. Edit `boot_cirros.py` file and change the line `auth_url = "http://192.168.27.100:35357/v2.0"` to point to your own endpoint.
+4. Execute the script:
+ python ./boot_cirros.py
+5. Check the result on the horizon console. Quite cool isn't it ?
+6. Connect  to your new instance using ssh and keys.
+7. Check if you can resolv internet addresses. If not, you failed in fixing the above issue and you just need to do it again or call the trainer if you are stuck.
+
+Well, we manage to drive our infrastructure using a python script, so it means we can do it from an application this is really powerful ! But, maybe you don't know about python (which is bad ;) ) . This is not an issue, bindings exists for other languages and of course applications have been developed to use that.
+
+
+As an application example, we're going to do the same using the cli:
+1. From controller, source our credentials and variables to access Openstack
+ cd ~/openstack_lab/devstack/baremetal/
+ source demo.openrc
+2. You can see the variables defined using:
+ env | grep OS
+3. Create a bash script file with the following content:
+
+
+
+
+
 
