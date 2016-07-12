@@ -6,7 +6,9 @@ pubip=$(openstack ip floating create -f json public | jq .ip | sed 's/"//g')  # 
 openstack ip floating add "$pubip" bastion  # Associate the ip to the instance
 echo "VM should be accessible soon at $pubip"
 
-while ssh $pubip "uname -a"
+while ! ssh-keyscan $pubip
 do
 	sleep 5s
 done
+
+ssh-keyscan $pubip >> ~/.ssh/authorized_keys
