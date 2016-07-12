@@ -130,7 +130,7 @@ All the VM deployed on the private network cannot be reached from outside, unles
 
 In order to make our automation easier not mapping/unmapping floating ip, we will deploy a bastion waystation that will relay ssh to the internal networks. This is also more secured, because we will expose from the outside of or cloud only the VMs that really require external access.
 
-
+1. Jump into ~/openstack_lab/bastion
 
 
 

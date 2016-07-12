@@ -1,6 +1,6 @@
 #!/bin/bash
 
-openstack server create --flavor m1.tiny --image "cirros-0.3.4-x86_64-uec" --key-name bastionkey internalvm
+openstack server create --flavor m1.small --image "Debian Jessie 64-bit" --key-name bastionkey internalvm
 vmip=""
 
 while [ -z "$vmip" ]
