@@ -82,10 +82,12 @@ Here is the lab environment:
 ### Minimal checks of the platform
 
 1. Connect to the horizon console.
-2. Deploy a cirros tiny instance using your lab station ssh key called myinstance.
+2. Deploy a "myinstance" cirros tiny instance using your lab station ssh key.
 3. Create a floating ip associated to your instance.
 4. Connect  to your instance using ssh and keys (login: cirros).
+![cirros__login](img/cirros_login.png)
 5. Check if you can ping an internet ip address (8.8.8.8), try with a fqdn (google.fr). Something should be wrong here, try to permanently fix that issue, and follow next steps to validate it. (hint update nw settings).
+
 
 Ok, we should now have internet available on our deployed instances. Let's continue and verify our fix is working fine.
 
@@ -101,9 +103,10 @@ So as an example, we will use a python script that will do the same things we di
 3. Edit `boot_cirros.py` file and change the line `auth_url = "http://192.168.27.100:35357/v2.0"` to point to your own endpoint.
 4. Execute the script:
  python ./boot_cirros.py
+![boot_cirros](img/boot_cirros.py.png)
 5. Check the result on the horizon console. Quite cool isn't it ?
 6. Connect  to your new instance using ssh and keys.
-7. Check if you can resolv internet addresses. If not, you failed in fixing the above issue and you just need to do it again or call the trainer if you are stuck.
+7. **Check if you can resolv internet addresses. If not, you failed in fixing the above issue and you just need to do it again or call the trainer if you are stuck.**
 
 Well, we manage to drive our infrastructure using a python script, so it means we can do it from an application this is really powerful ! But, maybe you don't know about python (which is bad ;) ) . This is not an issue, bindings exists for other languages and of course applications have been developed to use that.
 
@@ -114,8 +117,18 @@ As an application example, we're going to do the same using the cli:
  source demo.openrc
 2. You can see the variables defined using:
  env | grep OS
-3. Create a bash script file with the following content:
+3. Go back into ~/openstack_lab/devstack/common and `cat boot_cirros.sh`.
+4. Execute that script
 
+As a result, we have a new instance called cirros-script running with a floating ip.
+
+We can see the usage of 2 cli tools nova and openstack. Nova, cinder, glance, ..., tools are the old cli commands. The new way of managing Openstack is to use the `openstack` command. Because of this tool freshness, the latest command might not cover all the features compared to the old set of tools. So currently, we may have to use both.
+
+### Deploy a bastion waystation
+
+All the VM deployed on the private network cannot be reached from outside, unless a floating ip have been configured.
+
+In order to make our automation easier not mapping/unmapping floating ip, we will deploy a bastion waystation that will relay ssh to the internal networks. This is also more secured, because we will expose from the outside of or cloud only the VMs that really require external access.
 
 
 
