@@ -180,3 +180,5 @@ We are going to configure that mechanism:
 
 1. Jump into ~/openstack_lab/ansible 
 
+
+ansible -vvvv -i invpriv.sh internalvm -m ping -u debian
