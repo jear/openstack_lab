@@ -169,4 +169,14 @@ Again, this is an implementation choice to show you 2 different tools. But combi
 
 #### Configure ansible to use server names
 
+Cloud instances are really easy to spawn. However each time you spawn an instance, the ip is changing.
+So it is really difficult to rely on ip. We need to use names.
+
+Ansible use a file to called inventory to describe nodes. Then the playbooks, which will be our recipe to configure hosts will use the inventory file. Although in such case, this is static inventory.
+
+But, Ansible can also use a feature called dynamic inventory, an external provider can be configured to supply the host list and ip. Guess what ? A script is proposed on the Ansible [website](http://docs.ansible.com/ansible/intro_dynamic_inventory.html#example-openstack-external-inventory-script) to integrate it with Openstack.
+
+We are going to configure that mechanism:
+
+1. Jump into ~/openstack_lab/ansible 
 
