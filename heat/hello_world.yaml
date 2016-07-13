@@ -17,7 +17,7 @@ parameters:
   flavor:
     type: string
     description: Flavor for the server to be created
-    default: m1.tiny
+    default: m1.small
     constraints:
       - custom_constraint: nova.flavor
   image:
@@ -25,17 +25,17 @@ parameters:
     description: Image ID or image name to use for the server
     constraints:
       - custom_constraint: glance.image
-  admin_pass:
-    type: string
-    description: Admin password
-    hidden: true
-    constraints:
-      - length: { min: 6, max: 8 }
-        description: Password length must be between 6 and 8 characters
-      - allowed_pattern: "[a-zA-Z0-9]+"
-        description: Password must consist of characters and numbers only
-      - allowed_pattern: "[A-Z]+[a-zA-Z0-9]*"
-        description: Password must start with an uppercase character
+#  admin_pass:
+#    type: string
+#    description: Admin password
+#    hidden: true
+#    constraints:
+#      - length: { min: 6, max: 8 }
+#        description: Password length must be between 6 and 8 characters
+#      - allowed_pattern: "[a-zA-Z0-9]+"
+#        description: Password must consist of characters and numbers only
+#      - allowed_pattern: "[A-Z]+[a-zA-Z0-9]*"
+#        description: Password must start with an uppercase character
   db_port:
     type: number
     description: Database port number
@@ -48,10 +48,11 @@ resources:
   server:
     type: OS::Nova::Server
     properties:
+      name: hellostack_server1
       key_name: { get_param: key_name }
       image: { get_param: image }
       flavor: { get_param: flavor }
-      admin_pass: { get_param: admin_pass }
+      #admin_pass: { get_param: admin_pass }
       user_data:
         str_replace:
           template: |

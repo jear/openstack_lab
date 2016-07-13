@@ -144,7 +144,7 @@ In order to make our automation easier not mapping/unmapping floating ip, we wil
 At that point, we can join our VM located on the private network, we will now configure the ssh proxy command. So we will be able to use ssh as usual and it will proxy our connection to the bastion host in the background.
 
 1. To not use the proxy all the time, we will create a dedicated ssh_config client configuration. Copy your existing ssh_config: `cp /etc/ssh/ssh_config .`
-2. Edit the local ssh_config file changing ProxyCommand to `ProxyCommand ssh -q -W %h:%p debian@172.24.9.24` of course ip should be your own bastion ip.
+2. Edit the local ssh_config file changing ProxyCommand to `ProxyCommand ssh -q -W %h:%p debian@bastion` and add a bastion entry in your /etc/hosts.
 3. Try to connect directly to the VM on the internal subnet: `ssh -v -F ssh_config debian@10.0.0.37`, here we will use `-v` to show some debug message ensuring we are going through the proxy.
 ![bastion_proxy](img/bastion_proxy.png)
 
@@ -192,3 +192,7 @@ We are going to configure that mechanism:
 Ok we are ready to go ahead with automation using Ansible !
 
 #### Heat first template
+
+
+
+ssh -F ssh_config debian@bastion "ssh-keyscan -v -t rsa 10.0.1.12" >>~/.ssh/known_hosts
