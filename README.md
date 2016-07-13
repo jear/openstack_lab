@@ -156,9 +156,9 @@ We will now deploy an application, we will use Prestashop as an example. This is
 We will deploy the following infrastructure:
 
 * 1 x network to host our servers.
-* 1 x security group associated that will allow ssh from private network to the Prestoshop one and http from outside.
-* 1 x server apache + php engine.
-* 1 x server mysql database.
+* 1 x security group associated that will allow ssh from private network to the Prestashop one and http from outside.
+* 1 x server apache + php engine, Debian based.
+* 1 x server mysql database, Centos based.
 * 1 x floating ip to the server.
 
 Of course we could use a lot of tools to deploy our application (bash script, puppet, HPOO, cloudslang). Here we will choose:
@@ -178,7 +178,17 @@ But, Ansible can also use a feature called dynamic inventory, an external provid
 
 We are going to configure that mechanism:
 
-1. Jump into ~/openstack_lab/ansible 
+1. Jump into ~/openstack_lab/ansible
+2. Within this directory, you will find openstack.py script. Execute it `./openstack.py --list`. The output is a json file generated from Openstack containing information about our cloud and Ansible cant use that.
+3. invpriv.sh and invpub.sh are wrappers around openstack.py to select between a inventory based on private or public adresses. We will use the private one and our ssh proxy to connect using names to our desired instances.
+4. We will configure ansible to use all of that. First, we will use our own ansible.cfg configuration file. This file is already available in the directory. We will edit it and modify the following settings:
+* `inventory      = ~/openstack_lab/ansible/invpriv.sh` this will tell Ansible to use our wrapper script to generate the dynamic inventory.
+* `remote_user = debian` as most of our instances will be Debian, we use debian as default remote user.
+* `log_path = /var/log/ansible.log` enable Ansible logging which is usually a good habit.
+* `ssh_args = -F /root/openstack_lab/ansible/ssh_config` will tell Ansible to use our own ssh_config, configured to use our bastion proxy host. Note: the full path of the configuration file must be used.
+5. If everything is fine, running `ansible -vvvv internalvm -m ping` should produce the following output.
+![ansible_ping](img/ansible_ping.png)
 
+Ok we are ready to go ahead with automation using Ansible !
 
-ansible -vvvv -i invpriv.sh internalvm -m ping -u debian
+#### Heat first template
