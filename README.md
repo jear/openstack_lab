@@ -94,6 +94,7 @@ Openstack suppliers (HPE, Redhat, Mirantis etc...) will bundle Openstack upstrea
 The one used in our lab is the devstack, this is "distribution" intended to develop Openstack.
 
 Here is the lab environment:
+![environment](img/environent.svg)
 (do not forget to mention DNS)
 
 
