@@ -81,21 +81,38 @@ Openstack is a cloud solution to implement Infrastructure As A Service solution.
 
 Key strengths :
 
-* Drivers allow abstraction of the underlying physical infrastructure. Example, the way to create a persistent volume will be the same whatever the physical storage used (HPE, EMC).
+* Drivers allow abstraction of the underlying physical infrastructure. Example, the way to create a persistent volume will be the same whatever the physical storage used (HPE, EMC, etc...).
 
 * Standard defined API will allow automation whatever the tool/languages used.
 
-* Opensource, all piece of code can be used, seen, modified.
+* Opensource, all pieces of code can be used, studied, modified, copied as defined by the open source freedoms.
 
 ## Lab environment description
 
-Openstack suppliers (HPE, Redhat, Mirantis etc...) will bundle Openstack upstream projects and create an Openstack distribution.
+Openstack suppliers (HPE, Redhat, Mirantis, etc...) will bundle Openstack upstream projects and create an Openstack distribution.
 
-The one used in our lab is the devstack, this is "distribution" intended to develop Openstack.
+The one used in our lab is devstack, this is a "distribution" intended to develop Openstack. We chose to deploy it on a single baremetal node.
 
 Here is the lab environment:
-![environment](img/environent.svg)
-(do not forget to mention DNS)
+![environment](img/environment.svg)
+
+* X stand for group number.
+
+* N is a number assigned from Openstack dhcp.
+
+* 10.0.0.0/24 is our initial cloud internal network, VM will be deployed on it. We will use this subnet as our management subnet to deal with our infrastructure. The default security group will be attached to the VM inside this subnet. For convenience, icmp(ping) and ssh will be opened. 
+
+* 172.24.X.0/24 is our external cloud network. So it means, if you want to access a VM from outside of your cloud, you will have to create a floating ip to your VM. This is the mechanism used by Openstack default model (using neutron/vxlan) to map internal subnet defined by cloud users to datacenter network provided by IT network administrators. In a real world, this network would be known as a datacenter network, so it could be reached from "anywhere". In our case, this subnet can only be reached from LabX system. (need to explain access from internet)
+
+* 10.3.222.0/24 is the datacenter network connecting our systems LabX and DNS.
+
+* LabX is Openstack devstack and act as controller, compute, storage node. The Openstack services provided are Keystone, Horizon, Nova, Glance, Cinder, Neutron, Swift and Heat. You will also connect to this node and work from it.
+	* Horizon is available at http://10.3.222.X/dashboard
+	* Keystone endpoint is http://10.3.222.X:5000/v2.0
+
+* 10.3.222.22 can be used as a DNS server.
+
+
 
 
 ## Stop talking, get our hands dirty !
@@ -149,7 +166,7 @@ We can see the usage of 2 cli tools nova and openstack. Nova, cinder, glance, ..
 
 All the VM deployed on the private network cannot be reached from outside, unless a floating ip have been configured.
 
-In order to make our automation easier not mapping/unmapping floating ip, we will deploy a bastion waystation that will relay ssh to the internal networks. This is also more secured, because we will expose from the outside of or cloud only the VMs that really require external access.
+In order to make our automation easier not mapping/unmapping floating ip, we will deploy a bastion waystation that will relay ssh to the internal networks. This is also more secured, because we will expose from the outside of our cloud only the VMs that really require external access.
 
 1. Jump into ~/openstack_lab/bastion
 2. Launch `./bastion.sh`, it will deploy our bastion waystation attached to a floating ip.
@@ -213,6 +230,20 @@ We are going to configure that mechanism:
 Ok we are ready to go ahead with automation using Ansible !
 
 #### Heat first template
+
+As explained above, we will use heat to deploy our infrastructure.
+
+1. Jump into ~/openstack_lab/heat.
+2. Read hello_world.sh content and then run it `./hello_world.sh`, this script will use the hello_world.yaml heat template to deploy a simple server called hellostack_server1.
+3. Try to craft an openstack command line to use the servers_in_existing_neutron_net.yaml which is more interesting. The goal is to understand parameters first and then resources. As a result, you should have a stack and a network topology looking like the following ones.
+![img/heat_srv_neutron1.jpg](img/heat_srv_neutron1.jpg)
+
+![img/heat_srv_neutron1.jpg](img/heat_srv_neutron3.jpg)
+
+![img/heat_srv_neutron1.jpg](img/heat_srv_neutron2.jpg)
+
+4. Delete the 2 previous stacks `openstack stack delete hellostack` and `openstack stack delete  servers_in_new_neutron_net`.
+5. Based on servers_in_existing_neutron_net.yaml and servers_in_new_neutron_net.yaml templates, try to mix these templates in order to create a new one that fulfill Prestashop infrastructure needs. (hint do not create a new router, just attach to router1).
 
 
 
