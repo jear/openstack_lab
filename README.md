@@ -1,5 +1,25 @@
 # Work In Progress !
 
+Table of Contents
+=================
+
+  * [Openstack and cloud native application](#openstack-and-cloud-native-application)
+    * [Lab Writer and Trainer](#lab-writer-and-trainer)
+    * [Prerequisites](#prerequisites)
+    * [Objectives of Lab](#objectives-of-lab)
+    * [Reference documents](#reference-documents)
+  * [The infrastructure driven API (part 1)](#the-infrastructure-driven-api-part-1)
+    * [2 words about Openstack](#2-words-about-openstack)
+    * [Lab environment description](#lab-environment-description)
+    * [Stop talking, get our hands dirty !](#stop-talking-get-our-hands-dirty-)
+      * [Minimal checks of the platform](#minimal-checks-of-the-platform)
+      * [Deploy using python script and cli](#deploy-using-python-script-and-cli)
+      * [Deploy a bastion waystation](#deploy-a-bastion-waystation)
+      * [Deploy Prestashop](#deploy-prestashop)
+        * [Configure ansible to use server names](#configure-ansible-to-use-server-names)
+        * [Heat first template](#heat-first-template)
+
+
 # Openstack and cloud native application
 
 This lab is in 2 parts:
