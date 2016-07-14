@@ -229,7 +229,7 @@ We are going to configure that mechanism:
 
 Ok we are ready to go ahead with automation using Ansible !
 
-#### Heat first template
+#### Heat first templates
 
 As explained above, we will use heat to deploy our infrastructure.
 
@@ -242,8 +242,13 @@ As explained above, we will use heat to deploy our infrastructure.
 
 ![img/heat_srv_neutron1.jpg](img/heat_srv_neutron2.jpg)
 
-4. Delete the 2 previous stacks `openstack stack delete hellostack` and `openstack stack delete  servers_in_new_neutron_net`.
-5. Based on servers_in_existing_neutron_net.yaml and servers_in_new_neutron_net.yaml templates, try to mix these templates in order to create a new one that fulfill Prestashop infrastructure needs. (hint do not create a new router, just attach to router1).
+
+#### Heat Prestashop template
+
+Now we can try to elaborate our template.
+
+1. Delete the 2 previous stacks `openstack stack delete hellostack` and `openstack stack delete  servers_in_new_neutron_net`.
+2. Based on servers_in_existing_neutron_net.yaml and servers_in_new_neutron_net.yaml templates, try to mix these templates in order to create a new one that fulfill Prestashop infrastructure needs. (hint do not create a new router, just attach to router1).
 
 
 
