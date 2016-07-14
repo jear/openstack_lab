@@ -1,21 +1,30 @@
 heat_template_version: 2013-05-23
 
 description: >
-  HOT template to create a new neutron network plus a router to the public
-  network, and for deploying two servers into the new network. The template also
-  assigns floating IP addresses to each server so they are routable from the
-  public network.
+  HOT template to create a prestoshop environment
 
 parameters:
   key_name:
     type: string
     description: Name of keypair to assign to servers
-  image:
+  srvweb_name:
     type: string
-    description: Name of image to use for servers
-  flavor:
+    description: Name of web server
+  srvdb_name:
     type: string
-    description: Flavor to use for servers
+    description: Name of web server
+  imageweb:
+    type: string
+    description: Name of image to use for web server
+  imagedb:
+    type: string
+    description: Name of image to use for db server
+  flavorweb:
+    type: string
+    description: Flavor to use for web server
+  flavordb:
+    type: string
+    description: Flavor to use for db server
   public_net:
     type: string
     description: >
@@ -29,12 +38,12 @@ parameters:
   private_net_gateway:
     type: string
     description: Private network gateway address
-  private_net_pool_start:
-    type: string
-    description: Start of private network IP address allocation pool
-  private_net_pool_end:
-    type: string
-    description: End of private network IP address allocation pool
+#  private_net_pool_start:
+#    type: string
+#    description: Start of private network IP address allocation pool
+#  private_net_pool_end:
+#    type: string
+#    description: End of private network IP address allocation pool
 
 resources:
   private_net:
@@ -48,9 +57,9 @@ resources:
       network_id: { get_resource: private_net }
       cidr: { get_param: private_net_cidr }
       gateway_ip: { get_param: private_net_gateway }
-      allocation_pools:
-        - start: { get_param: private_net_pool_start }
-          end: { get_param: private_net_pool_end }
+#      allocation_pools:
+#        - start: { get_param: private_net_pool_start }
+#          end: { get_param: private_net_pool_end }
 
 #  router:
 #    type: OS::Neutron::Router
@@ -67,9 +76,9 @@ resources:
   server1:
     type: OS::Nova::Server
     properties:
-      name: Server1
-      image: { get_param: image }
-      flavor: { get_param: flavor }
+      name: { get_param: srvweb_name }
+      image: { get_param: imageweb }
+      flavor: { get_param: flavorweb }
       key_name: { get_param: key_name }
       networks:
         - port: { get_resource: server1_port }
@@ -82,18 +91,18 @@ resources:
         - subnet_id: { get_resource: private_subnet }
       security_groups: [{ get_resource: server_security_group }]
 
-#  server1_floating_ip:
-#    type: OS::Neutron::FloatingIP
-#    properties:
-#      floating_network: { get_param: public_net }
-#      port_id: { get_resource: server1_port }
+  server1_floating_ip:
+    type: OS::Neutron::FloatingIP
+    properties:
+      floating_network: { get_param: public_net }
+      port_id: { get_resource: server1_port }
 
   server2:
     type: OS::Nova::Server
     properties:
-      name: Server2
-      image: { get_param: image }
-      flavor: { get_param: flavor }
+      name: { get_param: srvdb_name }
+      image: { get_param: imagedb }
+      flavor: { get_param: flavordb }
       key_name: { get_param: key_name }
       networks:
         - port: { get_resource: server2_port }
@@ -120,8 +129,15 @@ resources:
           protocol: tcp
           port_range_min: 22
           port_range_max: 22
-#        - remote_ip_prefix: 0.0.0.0/0
-#          protocol: icmp
+        - remote_mode: remote_group_id
+          remote_group_id:
+          protocol: tcp
+          port_range_min: 3306
+          port_range_max: 3306
+        - remote_ip_prefix: 0.0.0.0/0
+          protocol: tcp
+          port_range_min: 80
+          port_range_max: 80
 
 #  server2_floating_ip:
 #    type: OS::Neutron::FloatingIP

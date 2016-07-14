@@ -1,0 +1,7 @@
+parameters:
+  key_name: bastionkey
+  imageweb: Debian Jessie 64-bit
+  imagedb: CentOS 6
+  flavorweb: m1.small
+  flavordb: m1.medium
+  public_net: public
