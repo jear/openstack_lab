@@ -13,6 +13,8 @@
     - heatstack
 
   tasks:
+    - debug: msg="{{ newstack }}"
+
     - name: Manage host keys
       include: host_keys.yaml
-      when: (newstack.skipped is not defined and not newstack.skipped) or force_host_keys is defined
+      when: newstack.changed or force_host_keys is defined
