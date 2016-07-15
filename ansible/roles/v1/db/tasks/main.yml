@@ -1,9 +1,11 @@
 ---
 # tasks file for db
 - name: Install Epel repo
-  shell: rpm -q epel-release || rpm -Uvh https://dl.fedoraproject.org/pub/epel/epel-release-latest-6.noarch.rpm
+  command: rpm -Uvh https://dl.fedoraproject.org/pub/epel/epel-release-latest-6.noarch.rpm
   retries: 2
   delay: 2
+  args:
+    creates: /etc/yum.repos.d/epel.repo
 
 - name: Install unzip
   yum: name=unzip state=present 
@@ -66,13 +68,13 @@
 
 #    - name: Copy dump to /tmp
 #      copy: src=packages/dump.sql dest=/tmp/dump.sql owner=root group=root mode=0644
-
+#
 #    - name: Import DB dump
 #      mysql_db: name=prestashop state=import target=/tmp/dump.sql
-
+#
 #    - name: Restart mysql
 #      service: name=mysqld state=restarted
-
+#
 #    - name : Allow DB to listen on 0.0.0.0
 #      replace: dest=/etc/mysql/my.cnf regexp='bind-address\s+=\s+127\.0\.0\.1' replace='bind-address = 0.0.0.0' backup=yes
 #

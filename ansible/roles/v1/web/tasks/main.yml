@@ -46,5 +46,7 @@
   service: name=apache2 state=restarted
 
 - name : Change write to www-data
-  shell: cd /var/www/html ; chown -R www-data prestashop ; chgrp -R www-data prestashop
+  shell: ls -ald prestashop | grep www-data || chown -R www-data:www-data prestashop
+  args:
+    chdir: /var/www/html
 
