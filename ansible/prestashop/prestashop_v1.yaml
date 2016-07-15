@@ -13,8 +13,29 @@
     - heatstack
 
   tasks:
-    - debug: msg="{{ newstack }}"
+    #- debug: msg="{{ newstack }}"
 
     - name: Manage host keys
-      include: host_keys.yaml
+      include: tasks/host_keys.yaml
       when: newstack.changed or force_host_keys is defined
+
+- hosts: "{{ stackname }}-db"
+  remote_user: centos
+  become: yes
+  #become_method: sudo
+
+  vars:
+    - stackname: "prestashopstack"
+  
+  roles:
+    - db
+
+- hosts: "{{ stackname }}-web"
+  become: yes
+  #become_method: sudo
+
+  vars:
+    - stackname: "prestashopstack"
+  
+  roles:
+    - web

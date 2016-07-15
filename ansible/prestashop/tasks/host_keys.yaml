@@ -1,0 +1,36 @@
+---
+# Task to manage new host keys
+- name: Get webip
+  shell: openstack stack output show {{ stackname }} server1_private_ip -f json | jq ."output_value" | sed 's/"//g'
+  register: webip 
+
+- name: Get dbip
+  shell: openstack stack output show {{ stackname }} server2_private_ip -f json | jq ."output_value" | sed 's/"//g'
+  register: dbip 
+
+- name: Wait for web instance to be ready
+  wait_for: port=22 delay=10 host={{ webip.stdout }}
+  delegate_to: bastion
+
+- name: Wait for db instance to be ready
+  wait_for: port=22 host={{ dbip.stdout }}
+  delegate_to: bastion
+
+- name: Remove old host keys
+  command: ssh-keygen -R "{{ item }}"
+  with_items:
+    - "{{ webip.stdout }}"
+    - "{{ dbip.stdout }}"
+
+- name: Get new host keys
+  command: ssh-keyscan -v -t rsa "{{ item }}"
+  delegate_to: bastion
+  with_items:
+    - "{{ webip.stdout }}"
+    - "{{ dbip.stdout }}"
+  register: hostkeys
+
+- name: Register keys
+  shell: echo "{{ item.stdout }}" >> ~/.ssh/known_hosts
+  with_items:
+    - "{{ hostkeys.results }}"

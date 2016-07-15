@@ -1,0 +1,50 @@
+---
+# tasks file for web
+- name: Install unzip
+  apt: name=unzip state=present update_cache=yes cache_valid_time=3600
+
+- name: Install php
+  apt: name=php5 state=present
+
+- name: Install mysql-client
+  apt: name=mysql-client state=present
+
+- name: Install php5-mysql
+  apt: name=php5-mysql state=present
+
+- name: Install libgd3
+  apt: name=libgd3 state=present
+
+- name: Install php5-gd
+  apt: name=php5-gd state=present
+
+- name: Install php5-mcrypt
+  apt: name=mcrypt state=present
+
+- name: Install php5-mcrypt
+  apt: name=php5-mcrypt state=present
+
+- name: Install php-db
+  apt: name=php-db state=present
+
+- name: Copy prestashop
+  copy: src=files/prestashop_1.6.0.14.zip dest=/var/www/html owner=root group=root mode=0644
+
+- name: Extract prestashop
+  command: unzip /var/www/html/prestashop_1.6.0.14.zip
+  args:
+    chdir: /var/www/html
+    creates: /var/www/html/prestashop
+
+#- name: Copy prestashop
+#  copy: src=files/prestashop_installed.tar.gz dest=/var/www/html owner=root group=root mode=0644
+#
+#- name: Extract prestashop
+#  shell: cd /var/www/html && tar zxf /var/www/html/prestashop_installed.tar.gz 
+
+- name: Restart apache
+  service: name=apache2 state=restarted
+
+- name : Change write to www-data
+  shell: cd /var/www/html ; chown -R www-data prestashop ; chgrp -R www-data prestashop
+

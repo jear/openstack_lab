@@ -3,3 +3,5 @@ vagrant_ansible_inventory_default
 tmp
 *.retry
 *.pyc
+*.swo
+*.swp
