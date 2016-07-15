@@ -1,0 +1,19 @@
+---
+# This playbook deploys prestashop infra.  
+- hosts: localhost
+  #remote_user: root
+
+  vars:
+    - network: "10.0.1.0"
+    - stackname: "prestashopstack"
+    - stackcmd: "../../heat/prestashop_v1.sh"
+
+  roles:
+    - v1/heatstack
+
+  tasks:
+    #- debug: msg="{{ newstack }}"
+
+    - name: Manage host keys
+      include: tasks/host_keys.yaml
+      when: newstack.changed or force_host_keys is defined
