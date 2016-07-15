@@ -1,4 +1,4 @@
-heat_template_version: 2013-05-23
+heat_template_version: 2016-04-08
 
 description: >
   HOT template to create a prestoshop environment
@@ -41,6 +41,9 @@ parameters:
   default_scid:
     type: string
     description: Default security group id (need the id, because it does not work with name)
+  dnslist:
+    type: json
+    description: Default dns servers
 #  private_net_pool_start:
 #    type: string
 #    description: Start of private network IP address allocation pool
@@ -60,6 +63,7 @@ resources:
       network_id: { get_resource: private_net }
       cidr: { get_param: private_net_cidr }
       gateway_ip: { get_param: private_net_gateway }
+      dns_nameservers: { get_param: dnslist }
 #      allocation_pools:
 #        - start: { get_param: private_net_pool_start }
 #          end: { get_param: private_net_pool_end }
@@ -152,9 +156,9 @@ outputs:
   server1_private_ip:
     description: IP address of server1 in private network
     value: { get_attr: [ server1, first_address ] }
-#  server1_public_ip:
-#    description: Floating IP address of server1 in public network
-#    value: { get_attr: [ server1_floating_ip, floating_ip_address ] }
+  server1_public_ip:
+    description: Floating IP address of server1 in public network
+    value: { get_attr: [ server1_floating_ip, floating_ip_address ] }
   server2_private_ip:
     description: IP address of server2 in private network
     value: { get_attr: [ server2, first_address ] }
