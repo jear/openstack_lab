@@ -1,0 +1,22 @@
+---
+# tasks file for heatstack
+- name: Check if stack already exist
+  shell: openstack stack list | grep -q {{ stackname }} 
+  register: isstack
+  ignore_errors: yes
+
+- name: Check if stack is fine
+  command: openstack stack check {{ stackname }} --wait
+  register: stack_status
+  when: isstack.rc == 0
+  ignore_errors: yes
+
+- name: Delete stack if the stack is not ok
+  command: openstack stack delete {{ stackname }} --wait
+  register: stack_deleted
+  when: stack_status is defined and stack_status.rc != 0
+
+- name: Deploy pretashop stack
+  command: "{{ stackcmd }} {{ network }} {{ stackname }}"
+  register: newstack
+  when: isstack.rc != 0 or (stack_status is defined and stack_status.rc != 0)

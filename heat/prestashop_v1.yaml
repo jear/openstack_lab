@@ -38,6 +38,9 @@ parameters:
   private_net_gateway:
     type: string
     description: Private network gateway address
+  default_scid:
+    type: string
+    description: Default security group id (need the id, because it does not work with name)
 #  private_net_pool_start:
 #    type: string
 #    description: Start of private network IP address allocation pool
@@ -122,10 +125,10 @@ resources:
       name: "prestashop"
       rules:
         - remote_mode: remote_group_id
-          remote_group_id: 7827a2b3-c04e-4481-bddc-cd513c254d9f
+          remote_group_id: { get_param: default_scid }
           protocol: icmp 
         - remote_mode: remote_group_id
-          remote_group_id: 7827a2b3-c04e-4481-bddc-cd513c254d9f
+          remote_group_id: { get_param: default_scid }
           protocol: tcp
           port_range_min: 22
           port_range_max: 22

@@ -25,22 +25,15 @@ else
 	stackname="$2"
 fi
 
+# Get default security group id
+default_scid=$(openstack security group show default -f json | jq .id | sed 's/"//g')
+
+# Create stack
 openstack stack create  --wait -t prestashop_v1.yaml -e prestashop_v1_param.yaml --parameter \
 "srvweb_name=$stackname-web;\
 srvdb_name=$stackname-db;\
+default_scid=$default_scid;\
 private_net_name=$stackname;\
 private_net_cidr=$net;\
 private_net_gateway=$netgw"\
  $stackname
-
-# Get internal ip to register ssh host keys:
-webip=$(openstack stack output show prestashopstack server1_private_ip -f json | jq ."output_value" | sed 's/"//g')
-dbip=$(openstack stack output show prestashopstack server2_private_ip -f json | jq ."output_value" | sed 's/"//g')
-
-# Remove previous keys if any
-ssh-keygen -R "$webip"
-ssh-keygen -R "$dbip"
-
-# Register ssh host keys
-ssh -F ../ansible/ssh_config debian@bastion "ssh-keyscan -v -t rsa $webip" >>~/.ssh/known_hosts
-ssh -F ../ansible/ssh_config debian@bastion "ssh-keyscan -v -t rsa $dbip" >>~/.ssh/known_hosts
