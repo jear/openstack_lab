@@ -39,8 +39,6 @@ Expected duration for each part is : 240 minutes.
   - Bruno.Cornec@hpe.com
   - Rene.Ribaud@hpe.com
 
-<!--- [comment]: # Table of Content to be added --->
-
 ## Prerequisites
 
 In order to follow this lab, you need to :
@@ -109,6 +107,8 @@ Here is the lab environment:
 * LabX is Openstack devstack and act as controller, compute, storage node. The Openstack services provided are Keystone, Horizon, Nova, Glance, Cinder, Neutron, Swift and Heat. You will also connect to this node and work from it.
 	* Horizon is available at http://10.3.222.X/dashboard
 	* Keystone endpoint is http://10.3.222.X:5000/v2.0
+	* Login = admin or demo, password = password
+
 
 * 10.3.222.22 can be used as a DNS server.
 
@@ -249,7 +249,8 @@ Now we can try to elaborate our template.
 
 1. Delete the 2 previous stacks `openstack stack delete hellostack` and `openstack stack delete  servers_in_new_neutron_net`.
 2. Based on servers_in_existing_neutron_net.yaml and servers_in_new_neutron_net.yaml templates, try to mix these templates in order to create a new one that fulfill Prestashop infrastructure needs. (hint do not create a new router, just attach to router1).
-
+Note: Information about resources can be found into horizon:
+![heat_resources](img/heat_resources.png)
 
 
 ssh -F ssh_config debian@bastion "ssh-keyscan -v -t rsa 10.0.1.12" >>~/.ssh/known_hosts
