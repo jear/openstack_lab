@@ -284,15 +284,18 @@ The both templates have been wrapped into prestashop_v1.sh script. So you can de
 Covering these playbooks and roles in the lab will be a bit too complex especially if you don't know Ansible. So we will use this materials has a common starting base, and we will elaborate it to have a smoother Ansible introduction.
 
 2. Deploy the application following above specification.
-3. Get the public_ip from openstack.
-4. Configure dnat to reach the ip from "outside".`iptables -t nat -A PREROUTING --dst <host_ip> -p tcp --dport 60080 -j DNAT --to-destination <public_ip>:80` *(to be reviewed with pub ip provided by Bruno but template must be changed in that case to fix the floating ip)*
-4. Connect to the application using your browser, you should see this screen:
+
+##### Prestashop part
+1. Get the public_ip from openstack.
+2. Configure dnat to reach the ip from "outside".`iptables -t nat -A PREROUTING --dst <host_ip> -p tcp --dport 60080 -j DNAT --to-destination <public_ip>:80` *(to be reviewed with pub ip provided by Bruno but template must be changed in that case to fix the floating ip)*
+3. Connect to the application using your browser, you should see this screen:
 ![prestashop_app](img/prestashop_app.png)
-5. Continue with the application configuration.
+4. Continue with the application configuration.
   * ![prestashop_inst1](img/prestashop_inst1.png)
   * ![prestashop_inst2](img/prestashop_inst2.png)
     1. Enter password and wrote it.
-    2. Uncheck Sign-up to newslater.
+    2. Uncheck "Sign-up to newsletter".
+    3. Enter an email and wrote it (do not enter your personal one). This will be used to access the admin part of the site.
   * ![prestashop_inst3](img/prestashop_inst3.png)
     1. Enter the ip address of your database.
     2. Database password is `prestashop1234`.
@@ -307,4 +310,19 @@ Covering these playbooks and roles in the lab will be a bit too complex especial
     3. Remove the install directory. `sudo rm -rf /var/www/html/prestashop/install`
   * ![prestashop_inst7](img/prestashop_inst7.png)
 
+Ok, this is fine but not completely automatic. It will be great to have our Prestashop site ready to use. Basically the status we have currently. However to do that, there is some things we need to fix.
+1. We need to know the ip address of the web service. This can be retrieve from Heat output, but as usual using ip with cloud environment is not really easy.
+2. If we look at the Prestashop installation, it is doing 2 main things:
+    1. Creating the configuration file that mainly specify how to access the database.
+    2. Populating the database with the application required tables and settings.
 
+Before fixing those points, we will have a look to another part to play a little with Ansible.
+
+
+##### Phpmyadmin part
+
+As explained above, the database instance was deployed with phpmyadmin. This is a web application to manage the database.
+
+To reach the application we need to connect using a navigator to the database instance. As we don't have a floating ip, we cannot connect to it from outside, but we can use a ssh tunnel to do that.
+
+1. 
