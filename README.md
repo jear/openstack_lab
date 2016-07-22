@@ -16,7 +16,7 @@ Table of Contents
       * [Deploy using python script and cli](#deploy-using-python-script-and-cli)
       * [Deploy a bastion waystation](#deploy-a-bastion-waystation)
       * [Deploy Prestashop](#deploy-prestashop)
-        * [Configure ansible to use server names](#configure-ansible-to-use-server-names)
+        * [Configure Ansible to use server names](#configure-Ansible-to-use-server-names)
         * [Heat first template](#heat-first-template)
 
 
@@ -205,36 +205,36 @@ Of course we could use a lot of tools to deploy our application (bash script, pu
 
 Again, this is an implementation choice to show you 2 different tools. But combining those tools make sens and make the deployment convenient. (this is also because the author likes them ! ;) )
 
-#### Configure ansible to use server names
+#### Configure Ansible to use server names
 
 Cloud instances are really easy to spawn. However each time you spawn an instance, the ip is changing.
 So it is really difficult to rely on ip. We need to use names.
 
 Ansible use a file to called inventory to describe nodes. Then the playbooks, which will be our recipe to configure hosts will use the inventory file. Although in such case, this is static inventory.
 
-But, Ansible can also use a feature called dynamic inventory, an external provider can be configured to supply the host list and ip. Guess what ? A script is proposed on the Ansible [website](http://docs.ansible.com/ansible/intro_dynamic_inventory.html#example-openstack-external-inventory-script) to integrate it with Openstack.
+But, Ansible can also use a feature called dynamic inventory, an external provider can be configured to supply the host list and ip. Guess what ? A script is proposed on the Ansible [website](http://docs.Ansible.com/ansible/intro_dynamic_inventory.html#example-openstack-external-inventory-script) to integrate it with Openstack.
 
 We are going to configure that mechanism:
 
 1. Jump into ~/openstack_lab/ansible
-2. Within this directory, you will find openstack.py script. Execute it `./openstack.py --list`. The output is a json file generated from Openstack containing information about our cloud and Ansible cant use that.
+2. Within this directory, you will find openstack.py script. Execute it `./openstack.py --list`. The output is a json file generated from Openstack containing information about our cloud and Ansible can use that.
 3. invpriv.sh and invpub.sh are wrappers around openstack.py to select between a inventory based on private or public adresses. We will use the private one and our ssh proxy to connect using names to our desired instances.
-4. We will configure ansible to use all of that. First, we will use our own ansible.cfg configuration file. This file is already available in the directory. We will edit it and modify the following settings:
+4. We will configure Ansible to use all of that. First, we will use our own ansible.cfg configuration file. This file is already available in the directory. We will edit it and modify the following settings:
 * `inventory      = ~/openstack_lab/ansible/invpriv.sh` this will tell Ansible to use our wrapper script to generate the dynamic inventory.
 * `remote_user = debian` as most of our instances will be Debian, we use debian as default remote user.
 * `log_path = /var/log/ansible.log` enable Ansible logging which is usually a good habit.
 * `ssh_args = -F /root/openstack_lab/ansible/ssh_config` will tell Ansible to use our own ssh_config, configured to use our bastion proxy host. Note: the full path of the configuration file must be used.
 5. If everything is fine, running `ansible -vvvv internalvm -m ping` should produce the following output.
-![ansible_ping](img/ansible_ping.png)
+![Ansible_ping](img/ansible_ping.png)
 
 Ok we are ready to go ahead with automation using Ansible !
 
 #### Heat first templates
 
-As explained above, we will use heat to deploy our infrastructure.
+As explained above, we will use Heat to deploy our infrastructure.
 
 1. Jump into ~/openstack_lab/heat.
-2. Read hello_world.sh content and then run it `./hello_world.sh`, this script will use the hello_world.yaml heat template to deploy a simple server called hellostack_server1.
+2. Read hello_world.sh content and then run it `./hello_world.sh`, this script will use the hello_world.yaml Heat template to deploy a simple server called hellostack_server1.
 3. Try to craft an openstack command line to use the servers_in_existing_neutron_net.yaml which is more interesting. The goal is to understand parameters first and then resources. As a result, you should have a stack and a network topology looking like the following ones.
 ![img/heat_srv_neutron1.jpg](img/heat_srv_neutron1.jpg)
 
@@ -248,9 +248,45 @@ As explained above, we will use heat to deploy our infrastructure.
 Now we can try to elaborate our template.
 
 1. Delete the 2 previous stacks `openstack stack delete hellostack` and `openstack stack delete  servers_in_new_neutron_net`.
-2. Based on servers_in_existing_neutron_net.yaml and servers_in_new_neutron_net.yaml templates, try to mix these templates in order to create a new one that fulfill Prestashop infrastructure needs. (hint do not create a new router, just attach to router1).
+2. Based on servers_in_existing_neutron_net.yaml and servers_in_new_neutron_net.yaml templates, try to mix these templates in order to create a new one that fulfill Prestashop infrastructure needs.
+    * Do not create a new router, just attach to the existing router1.
+    * Take care with flavor and images because db and web should not run the same distribution.
+    * Manage security group to allow :
+        * ssh and icmp connections from default security group.
+        * mysql traffic within the deployed security group.
+        * web access from outside.
+    * Outputs should contain the private and public ips.
+
 Note: Information about resources can be found into horizon:
 ![heat_resources](img/heat_resources.png)
+
+3. If you manage to meet the above settings, you should have something similar to servers_in_existing_neutron_net.yaml as a template.
+4. The servers_in_existing_neutron_net.yaml template has been wrapped into prestashop_v1.sh script, so you can deploy a prestashop infra stack using `./prestashop_v1.sh <private_nw_subnet> <stackname>`
+
+#### Prestashop configuration with Ansible
+
+1. Jump to ~/openstack_lab/ansible/prestashop.
+
+There are 2 playbooks in this directory.
+    * prestashop_infra_v1.yaml
+    * prestashop_app_v1.yaml
+
+*  prestashop_infra_v1.yaml is doing:
+
+![infra_stack](img/infra_stack.png)
+
+* prestashop_app_v1.yaml will use 2 roles:
+    * ~/openstack_lab/ansible/roles/v1/web --> will configure prestashop.
+    * ~/openstack_lab/ansible/roles/v1/db  --> will configure mysql + phpmyadmin.
+
+
+The both templates have been wrapped into prestashop_v1.sh script. So you can deploy the prestashop application using `./prestashop_v1.sh <private_nw_subnet> <stackname>`.
+
+Covering these playbooks and roles in the lab will be a bit too complex especially if you don't know Ansible. So we will use this materials has a common base, and we will elaborate it to have a glance or a smoother Ansible introduction.
+
+2. Deploy the application following above specification.
+3. Get the public_ip from openstack.
+4. Connect to the application using your browser, you should see this screen
 
 
 ssh -F ssh_config debian@bastion "ssh-keyscan -v -t rsa 10.0.1.12" >>~/.ssh/known_hosts

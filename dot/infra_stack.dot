@@ -1,0 +1,18 @@
+digraph G {
+	a [color=lightblue,style=filled,label="Check if stack exist" shape=box];
+	b [color=lightblue,style=filled,label="Create stack" shape=box];
+	c [color=lightblue,style=filled,label="Check if stack is fine" shape=box];
+	d [color=lightblue,style=filled,label="Delete stack" shape=box];
+	e [color=lightblue,style=filled,label="Create or refresh host keys" shape=box];
+	f [color=lightblue,style=filled,label="Stack ready" shape=box];
+
+    a -> b [label="no"]
+    b -> e
+    e -> f
+
+	a -> c [label="yes"]
+    c -> f [label="yes"]
+
+    c -> d [label="no"]
+    d -> e
+}
