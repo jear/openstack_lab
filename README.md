@@ -303,6 +303,8 @@ Covering these playbooks and roles in the lab will be a bit too complex especial
   * ![prestashop_inst5](img/prestashop_inst5.png)
   * ![prestashop_inst6](img/prestashop_inst6.png)
     1. This is a security feature, a file must be removed to access that part.
-    2. Connect to the web instance and remove the file.
+    2. Connect to the web instance with ssh, try to connect through the public ip first. Why is it not working ?
+    3. Remove the install directory. `sudo rm -rf /var/www/html/prestashop/install`
+  * ![prestashop_inst7](img/prestashop_inst7.png)
 
 
