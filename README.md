@@ -255,7 +255,7 @@ Now we can try to elaborate our template.
         * ssh and icmp connections from default security group.
         * mysql traffic within the deployed security group.
         * web access from outside.
-    * Outputs should contain the private and public ips.
+        * Outputs should contain the private and public ips.
 
 Note: Information about resources can be found into horizon:
 ![heat_resources](img/heat_resources.png)
@@ -272,8 +272,7 @@ There are 2 playbooks in this directory.
     * prestashop_app_v1.yaml
 
 *  prestashop_infra_v1.yaml is doing:
-
-![infra_stack](img/infra_stack.png)
+    * ![infra_stack](img/infra_stack.png)
 
 * prestashop_app_v1.yaml will use 2 roles:
     * ~/openstack_lab/ansible/roles/v1/web --> will configure prestashop.
@@ -282,11 +281,28 @@ There are 2 playbooks in this directory.
 
 The both templates have been wrapped into prestashop_v1.sh script. So you can deploy the prestashop application using `./prestashop_v1.sh <private_nw_subnet> <stackname>`.
 
-Covering these playbooks and roles in the lab will be a bit too complex especially if you don't know Ansible. So we will use this materials has a common base, and we will elaborate it to have a glance or a smoother Ansible introduction.
+Covering these playbooks and roles in the lab will be a bit too complex especially if you don't know Ansible. So we will use this materials has a common starting base, and we will elaborate it to have a smoother Ansible introduction.
 
 2. Deploy the application following above specification.
 3. Get the public_ip from openstack.
-4. Connect to the application using your browser, you should see this screen
+4. Configure dnat to reach the ip from "outside".`iptables -t nat -A PREROUTING --dst <host_ip> -p tcp --dport 60080 -j DNAT --to-destination <public_ip>:80` *(to be reviewed with pub ip provided by Bruno but template must be changed in that case to fix the floating ip)*
+4. Connect to the application using your browser, you should see this screen:
+![prestashop_app](img/prestashop_app.png)
+5. Continue with the application configuration.
+  * ![prestashop_inst1](img/prestashop_inst1.png)
+  * ![prestashop_inst2](img/prestashop_inst2.png)
+    1. Enter password and wrote it.
+    2. Uncheck Sign-up to newslater.
+  * ![prestashop_inst3](img/prestashop_inst3.png)
+    1. Enter the ip address of your database.
+    2. Database password is `prestashop1234`.
+    3. Test connection to the db.
+  * ![prestashop_inst4](img/prestashop_inst4.png)
+    1. Click to show the site main page.
+    2. Click to show the admin part.
+  * ![prestashop_inst5](img/prestashop_inst5.png)
+  * ![prestashop_inst6](img/prestashop_inst6.png)
+    1. This is a security feature, a file must be removed to access that part.
+    2. Connect to the web instance and remove the file.
 
 
-ssh -F ssh_config debian@bastion "ssh-keyscan -v -t rsa 10.0.1.12" >>~/.ssh/known_hosts
