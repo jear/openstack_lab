@@ -118,6 +118,10 @@ resources:
           protocol: tcp
           port_range_min: 53
           port_range_max: 53
+        - remote_ip_prefix: 0.0.0.0/0
+          protocol: udp
+          port_range_min: 53
+          port_range_max: 53
 
 outputs:
   server1_private_ip:

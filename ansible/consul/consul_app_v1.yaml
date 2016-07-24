@@ -18,6 +18,9 @@
 
     - name: Install dig
       apt: name="dnsutils" state="present"
+    
+    - name: Install curl
+      apt: name="curl" state="present"
 
     - name: Download consul
       get_url: >
