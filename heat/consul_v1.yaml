@@ -114,11 +114,6 @@ resources:
           protocol: tcp
           port_range_min: 8500
           port_range_max: 8500
-        - remote_mode: remote_group_id
-          remote_group_id: { get_param: default_scid }
-          protocol: tcp
-          port_range_min: 80
-          port_range_max: 80
         - remote_ip_prefix: 0.0.0.0/0
           protocol: tcp
           port_range_min: 53
