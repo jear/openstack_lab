@@ -325,4 +325,40 @@ As explained above, the database instance was deployed with phpmyadmin. This is 
 
 To reach the application we need to connect using a navigator to the database instance. As we don't have a floating ip, we cannot connect to it from outside, but we can use a ssh tunnel to do that.
 
-1. 
+1. Connect to the database instance and open a tunnel `ssh -F ../ssh_config -L 60000:localhost:80 -g centos@10.0.1.4`
+2. Try to connect using a navigator and address `localhost:60000`. Why is it not working ?
+3. Right the service httpd is down, start it and you should get the CentOS default web pages.
+4. If you use `localhost:60000/phpmyadmin`, you can see the phpMyAdmin login screen.
+5. So the service is not started at the end of our db role, try to fix it. You can restart the `prestashop_v1.sh` script as many times as you wish. This is one of the value of Ansible, it helps to do idempotent scripts. Call the instructor if you are stuck ot if you need explanations.
+
+##### Using names for our services
+
+Back to our automation issue, we will now fix the naming problems.
+
+To do that we will install a register service, we will use the Consul application.
+
+Consul is a nice application, we can register names using rest API calls. The names can be retrieve using rest queries, but Consul is also compatible with the DNS protocol so it can be queried using standard dns tools.
+
+You will create your first ansible playbook, this playbook will do :
+* Deploy using Heat a new debian instance in a new network. Opening port 53 (DNS) from anywhere, 8500 (API + UI) from default. It means management will not be accessible publicly.
+* Download consul zip from https://releases.hashicorp.com/consul/0.6.4/consul_0.6.4_linux_amd64.zip .
+* Extract consul in /usr/local/bin.
+* Create a systemd service file for consul.
+* Create a configuration file to set dns port from 8000 (default consul port) to 53.
+* Execute it in development mode, also activate the ui (web interface) option. It will be run as root.
+
+Of course this is to make our consul installation as simple as possible, this is not suitable for a real production usage. For production, we will have to create a cluster, run it as with a system account (not root) and use dnsmasq or a firewall rule to redirect traffic form port 53 to default consul one (8600).
+
+1. Create a new **heat template**, by copying the prestashop one.
+```
+cp prestashop_v1.sh myconsul_v1.sh
+cp prestashop_v1.yaml myconsul_v1.yaml
+cp prestashop_v1_param.yaml myconsul_v1_param.yaml
+```
+2. Adapt those files to meet the above requirements.
+3. Create a new **ansible playbook**, by copying the prestashop one.
+`cp -r prestashop myconsul`
+4. Adapt files into myconsul to meet the above requirements.
+
+
+
