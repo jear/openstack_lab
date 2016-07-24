@@ -16,7 +16,7 @@
   register: stack_deleted
   when: stack_status is defined and stack_status.rc != 0
 
-- name: Deploy pretashop stack
+- name: Deploy stack
   command: "{{ stackcmd }} {{ network }} {{ stackname }}"
   register: newstack
   when: isstack.rc != 0 or (stack_status is defined and stack_status.rc != 0)

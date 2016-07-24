@@ -1,0 +1,40 @@
+---
+# This playbook deploys consul app.  
+- hosts: "{{ stackname }}-consul"
+  remote_user: debian
+  become: yes
+  #become_method: sudo
+
+  vars:
+    - stackname: "consulstack"
+    - consul_url: "https://releases.hashicorp.com/consul/0.6.4/consul_0.6.4_linux_amd64.zip"
+    - consul_download_dir: "/tmp"
+    - consul_install_dir: "/usr/local/bin"
+    - consul_config_dir: "/usr/local/etc"
+ 
+  tasks:
+    - name: Download consul
+      get_url: >
+        url={{ consul_url }}
+        dest={{ consul_download_dir }}/consul.zip
+
+    - name: Unzip consul to installation directory
+      command: unzip {{ consul_download_dir }}/consul.zip -d {{ consul_install_dir }}
+      args:
+        creates: "{{ consul_install_dir }}/consul"
+
+    - name: Create consul service
+      template: >
+        src=templates/consul.service.j2
+        dest=/lib/systemd/system/consul.service
+        owner=root
+        group=root
+        mode=0644
+
+    - name: Create Consul configuration file
+      template: >
+        src=templates/consul.json.j2
+        dest={{ consul_config_dir }}/consul.json
+        owner=root
+        group=root
+        mode=0644
