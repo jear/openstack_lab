@@ -1,0 +1,26 @@
+---
+# This playbook deploys prestashop app.  
+- hosts: "{{ stackname }}-db"
+  remote_user: centos
+  become: yes
+  #become_method: sudo
+
+  vars:
+    - stackname: "prestashopstack"
+    - consulip: "10.10.0.3"
+    - consulport: "8500"
+  
+  roles:
+    - v3/db
+
+- hosts: "{{ stackname }}-web"
+  become: yes
+  #become_method: sudo
+
+  vars:
+    - stackname: "prestashopstack"
+    - consulip: "10.10.0.3"
+    - consulport: "8500"
+  
+  roles:
+    - v3/web
