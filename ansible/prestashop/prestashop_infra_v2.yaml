@@ -10,5 +10,5 @@
     - stackoutput: [ "server1_private_ip", "server2_private_ip" ]
 
   roles:
-    - v1/heatstack
+    - v2/heatstack
     - { role: v2/hostkeys, when: newstack.changed or force_host_keys is defined }
