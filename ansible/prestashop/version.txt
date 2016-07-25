@@ -1,0 +1,3 @@
+v1 = Prestashop install
+v2 = Prestashop with consul
+v3 = Prestashop with consul + automatic install

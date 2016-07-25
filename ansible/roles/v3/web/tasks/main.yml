@@ -27,28 +27,25 @@
 - name: Install php-db
   apt: name=php-db state=present
 
-- name: Copy prestashop
-  copy: src=files/prestashop_1.6.0.14.zip dest=/var/www/html owner=root group=root mode=0644
-
-- name: Extract prestashop
-  command: unzip /var/www/html/prestashop_1.6.0.14.zip
-  args:
-    chdir: /var/www/html
-    creates: /var/www/html/prestashop
-
-#- name: Copy prestashop
+#- name: Copy prestashop installed
 #  copy: src=files/prestashop_installed.tar.gz dest=/var/www/html owner=root group=root mode=0644
-#
-#- name: Extract prestashop
-#  shell: cd /var/www/html && tar zxf /var/www/html/prestashop_installed.tar.gz 
+
+- name: Extract prestashop installed
+  unarchive: src=files/prestashop_installed.tar.gz dest=/var/www/html creates=/var/www/html/prestashop
+
+- name: Update settings.conf
+  replace: dest=/var/www/html/prestashop/config/settings.inc.php regexp='prestashopstack-db.service.consul' replace='{{ stackname }}-db.service.consul' backup='yes'
+
+- name: Cleanup prestashop cache
+  command: rm -rf /var/www/html/prestashop/cache/smarty/cache
 
 - name: Restart apache
   service: name=apache2 state=restarted
 
-- name : Change write to www-data
-  shell: ls -ald prestashop | grep www-data || chown -R www-data:www-data prestashop
-  args:
-    chdir: /var/www/html
+#- name : Change write to www-data
+#  shell: ls -ald prestashop | grep www-data || chown -R www-data:www-data prestashop
+#  args:
+#    chdir: /var/www/html
 
 - name: Register service
   uri: 
@@ -62,6 +59,6 @@
   uri: 
     url: "http://{{ consulip }}:{{ consulport }}/v1/agent/check/register"
     method: POST 
-    body: '{ "ID": "chk-{{ stackname }}-web", "Name": "Prestashop HTTP check", "HTTP": "http://{{ ansible_default_ipv4.address }}/prestashop", "Interval": "10s",  "service_id": "{{ stackname }}-web" }'
+    body: '{ "ID": "chk-{{ stackname }}-web", "Name": "Prestashop HTTP check", "HTTP": "http://{{ ansible_default_ipv4.address }}/prestashop/index.php", "Interval": "10s",  "service_id": "{{ stackname }}-web" }'
     body_format: json
   delegate_to: bastion

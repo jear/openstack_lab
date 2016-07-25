@@ -64,13 +64,23 @@
 - name: Create DB admin user local
   mysql_user: name=prestashop password=prestashop1234 priv=*.*:ALL,GRANT host='localhost' state=present
 
-#    - name: Remove previous db if already exist
-#      mysql_db: name=prestashop state=absent
-#      
+- name: Uncompress dump
+  unarchive: src=files/prestashop.dump.tar.gz dest=/tmp creates=/tmp/prestashop.dump
+  register: dbinit
+    
+- name: Patch dump with ip
+  replace: dest=/tmp/prestashop.dump regexp='10.3.222.89:60080' replace='{{ publicurl }}' backup='yes'
+  when: dbinit.changed
+
 - name: Setup DB
   mysql_db: name=prestashop state=present
+  when: dbinit.changed
+
+- name: Import DB dump
+  mysql_db: name=prestashop state=import target=/tmp/prestashop.dump
   notify: 
     - restart mysql
+  when: dbinit.changed
 
 #    - name: Copy dump to /tmp
 #      copy: src=packages/dump.sql dest=/tmp/dump.sql owner=root group=root mode=0644
