@@ -27,12 +27,14 @@ fi
 
 # Get default security group id
 default_scid=$(openstack security group show default -f json | jq .id | sed 's/"//g')
+consul_scid=$(openstack security group show consulstack -f json | jq .id | sed 's/"//g')
 
 # Create stack
 openstack stack create  --wait -t prestashop_v2.yaml -e prestashop_v2_param.yaml --parameter \
 "srvweb_name=$stackname-web;\
 srvdb_name=$stackname-db;\
 default_scid=$default_scid;\
+consul_scid=$consul_scid;\
 private_net_name=$stackname;\
 private_net_cidr=$net;\
 private_net_gateway=$netgw"\

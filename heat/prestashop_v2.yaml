@@ -41,6 +41,9 @@ parameters:
   default_scid:
     type: string
     description: Default security group id (need the id, because it does not work with name)
+  consul_scid:
+    type: string
+    description: consul security group id
   dnslist:
     type: json
     description: Default dns servers
@@ -136,6 +139,11 @@ resources:
           protocol: tcp
           port_range_min: 22
           port_range_max: 22
+        - remote_mode: remote_group_id
+          remote_group_id: { get_param: consul_scid }
+          protocol: tcp
+          port_range_min: 3306
+          port_range_max: 3306
         - remote_mode: remote_group_id
           remote_group_id:
           protocol: tcp
