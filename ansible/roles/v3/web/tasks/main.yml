@@ -59,6 +59,6 @@
   uri: 
     url: "http://{{ consulip }}:{{ consulport }}/v1/agent/check/register"
     method: POST 
-    body: '{ "ID": "chk-{{ stackname }}-web", "Name": "Prestashop HTTP check", "HTTP": "http://{{ ansible_default_ipv4.address }}/prestashop/index.php", "Interval": "10s",  "service_id": "{{ stackname }}-web" }'
+    body: '{ "ID": "chk-{{ stackname }}-web", "Name": "Prestashop HTTP check", "HTTP": "http://{{ ansible_default_ipv4.address }}", "Interval": "10s",  "service_id": "{{ stackname }}-web" }'
     body_format: json
   delegate_to: bastion
