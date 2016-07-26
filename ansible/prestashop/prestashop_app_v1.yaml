@@ -6,7 +6,7 @@
   #become_method: sudo
 
   vars:
-    - stackname: "prestashopstack"
+    - stackname: "psstack"
   
   roles:
     - v1/db
@@ -16,7 +16,7 @@
   #become_method: sudo
 
   vars:
-    - stackname: "prestashopstack"
+    - stackname: "psstack"
   
   roles:
     - v1/web

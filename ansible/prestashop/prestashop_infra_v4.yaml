@@ -5,7 +5,7 @@
 
   vars:
     - network: "10.0.1.0"
-    - stackname: "prestashopstack"
+    - stackname: "psstack"
     - stackcmd: "../../heat/prestashop_v4.sh"
     - stackoutput: [ "server1_private_ip", "server2_private_ip" ]
 

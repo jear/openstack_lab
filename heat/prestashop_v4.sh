@@ -3,7 +3,7 @@
 # Prestashop stack
 #
 # $1: Network ip (only class C)
-# $2: Stack name (default:prestashopstack)
+# $2: Stack name (default:psstack)
 
 cd $(dirname $0)
 
@@ -20,7 +20,7 @@ fi
 
 if [ -z "$2" ]
 then
-	stackname="prestashopstack"
+	stackname="psstack"
 else
 	stackname="$2"
 fi
