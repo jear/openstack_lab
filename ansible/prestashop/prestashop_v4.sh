@@ -22,5 +22,12 @@ then
 else
 	stackname="$2"
 fi
+
+if [ ${#stackname} -gt 10 ]
+then
+	echo "Stackname should not exceed 10 chars"
+	exit 1
+fi
+
 ansible-playbook -vvvv prestashop_infra_v4.yaml -e network=$net -e stackname=$stackname
 ansible-playbook -vvvv prestashop_app_v4.yaml -e stackname=$stackname
