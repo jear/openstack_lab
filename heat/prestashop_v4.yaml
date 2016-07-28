@@ -93,10 +93,11 @@ resources:
           flavor: { get_param: flavorweb }
           key_name: { get_param: key_name }
           networks: [{network: {get_resource: private_net} }]
+          security_groups: [{ get_resource: server_security_group }]
       min_size: 1
       desired_capacity: 2
       max_size: 4
-  
+
   scale_up_policy:
     type: OS::Heat::ScalingPolicy
     properties:

@@ -14,7 +14,7 @@
   roles:
     - v4/db
 
-- hosts: "{{ stackname }}-web"
+- hosts: "{{ stackname }}-asg*"
   become: yes
   #become_method: sudo
 
