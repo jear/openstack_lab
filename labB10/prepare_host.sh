@@ -72,7 +72,7 @@ pdsh -R ssh -w ^labhosts.txt "echo 'deb-src http://ppa.launchpad.net/ansible/ans
 pdsh -R ssh -w ^labhosts.txt "gpg --ignore-time-conflict --no-options --no-default-keyring --secret-keyring /etc/apt/secring.gpg --trustdb-name /etc/apt/trustdb.gpg --keyring /etc/apt/trusted.gpg --primary-keyring /etc/apt/trusted.gpg --keyserver hkp://keyserver.ubuntu.com:80 --recv 6125E2A8C77F2818FB7BD15B93C4A3FD7BB9C367"
 
 pdsh -R ssh -w ^labhosts.txt "apt-get update"
-pdsh -R ssh -w ^labhosts.txt "apt-get install -y git ansible pdsh python-glanceclient python-novaclient python-openstackclient python-pip libpython2.7-dev xz-utils jq nmap"
+pdsh -R ssh -w ^labhosts.txt "apt-get install -y git ansible pdsh python-glanceclient python-novaclient python-openstackclient python-pip libpython2.7-dev xz-utils jq nmap python3-docopt"
 pdsh -R ssh -w ^labhosts.txt "git clone https://github.com/uggla/openstack_lab.git"
 pdsh -R ssh -w ^labhosts.txt "pip install -U pip"
 pdsh -R ssh -w ^labhosts.txt "pip install -U pbr"

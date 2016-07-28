@@ -31,7 +31,7 @@ consul_scid=$(openstack security group show consulstack -f json | jq .id | sed '
 
 # Create stack
 openstack stack create  --wait -t prestashop_v4.yaml -e prestashop_v4_param.yaml --parameter \
-"srvweb_name=$stackname-web;\
+"srvweb_name=$stackname-ha;\
 srvdb_name=$stackname-db;\
 default_scid=$default_scid;\
 consul_scid=$consul_scid;\

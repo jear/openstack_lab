@@ -102,7 +102,7 @@ resources:
     properties:
       adjustment_type: change_in_capacity
       auto_scaling_group_id: {get_resource: asg}
-      cooldown: 60
+      cooldown: 20
       scaling_adjustment: 1
 
   scale_down_policy:
@@ -110,18 +110,18 @@ resources:
     properties:
       adjustment_type: change_in_capacity
       auto_scaling_group_id: {get_resource: asg}
-      cooldown: 60
+      cooldown: 20
       scaling_adjustment: '-1'
 
-#  server1:
-#    type: OS::Nova::Server
-#    properties:
-#      name: { get_param: srvweb_name }
-#      image: { get_param: imageweb }
-#      flavor: { get_param: flavorweb }
-#      key_name: { get_param: key_name }
-#      networks:
-#        - port: { get_resource: server1_port }
+  server1:
+    type: OS::Nova::Server
+    properties:
+      name: { get_param: srvweb_name }
+      image: { get_param: imageweb }
+      flavor: { get_param: flavorweb }
+      key_name: { get_param: key_name }
+      networks:
+        - port: { get_resource: server1_port }
 
   server1_port:
     type: OS::Neutron::Port
@@ -131,11 +131,11 @@ resources:
         - subnet_id: { get_resource: private_subnet }
       security_groups: [{ get_resource: server_security_group }]
 
-#  server1_floating_ip:
-#    type: OS::Neutron::FloatingIP
-#    properties:
-#      floating_network: { get_param: public_net }
-#      port_id: { get_resource: server1_port }
+  server1_floating_ip:
+    type: OS::Neutron::FloatingIP
+    properties:
+      floating_network: { get_param: public_net }
+      port_id: { get_resource: server1_port }
 
   server2:
     type: OS::Nova::Server
@@ -191,12 +191,12 @@ resources:
 #      port_id: { get_resource: server2_port }
 
 outputs:
-#  server1_private_ip:
-#    description: IP address of server1 in private network
-#    value: { get_attr: [ server1, first_address ] }
-#  server1_public_ip:
-#    description: Floating IP address of server1 in public network
-#    value: { get_attr: [ server1_floating_ip, floating_ip_address ] }
+  server1_private_ip:
+    description: IP address of server1 in private network
+    value: { get_attr: [ server1, first_address ] }
+  server1_public_ip:
+    description: Floating IP address of server1 in public network
+    value: { get_attr: [ server1_floating_ip, floating_ip_address ] }
   server2_private_ip:
     description: IP address of server2 in private network
     value: { get_attr: [ server2, first_address ] }
@@ -219,7 +219,7 @@ outputs:
     description: >
       This is the current size of the auto scaling group.
     value: {get_attr: [asg, current_size]}
-  server_list:
+  asg_server_list:
     description: >
       This is a list of server names that are part of the group.
     value: {get_attr: [asg, outputs_list, name]}
@@ -227,9 +227,9 @@ outputs:
     description: >
       This is a map of server resources and their networks.
     value: {get_attr: [asg, outputs, networks]}
-  server_ips:
+  asg_server_ips:
     description: >
       This is a list of first ip addresses of the servers in the group
       for a specified network.
-    value: {get_attr: [asg, outputs_list, networks, {get_param: network}, 0]}
+    value: {get_attr: [asg, outputs_list, networks, {get_resource: private_net }, 0]}
 
