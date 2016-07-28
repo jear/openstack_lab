@@ -25,3 +25,15 @@
   
   roles:
     - v4/web
+
+- hosts: "{{ stackname }}-ha"
+  become: yes
+  #become_method: sudo
+
+  vars:
+    - stackname: "psstack"
+    - consulip: "10.10.0.3"
+    - consulport: "8500"
+  
+  roles:
+    - v4/haproxy

@@ -51,7 +51,7 @@
   uri: 
     url: "http://{{ consulip }}:{{ consulport }}/v1/agent/service/register"
     method: POST 
-    body: '{ "ID": "{{ stackname }}-{{ ansible_nodename | regex_replace("^.+-", "") }}", "Name": "{{ stackname }}-{{ ansible_nodename | regex_replace("^.+-", "") }}", "Address": "{{ ansible_default_ipv4.address }}", "Port": 80 }'
+    body: '{ "ID": "{{ stackname }}-{{ ansible_nodename | regex_replace("^.+-", "") }}", "Name": "{{ stackname }}-asg-{{ play_hosts.index(inventory_hostname) | int + 1 }}", "Address": "{{ ansible_default_ipv4.address }}", "Port": 80 }'
     body_format: json
   delegate_to: bastion
 
