@@ -30,6 +30,9 @@
 #- name: Copy prestashop installed
 #  copy: src=files/prestashop_installed.tar.gz dest=/var/www/html owner=root group=root mode=0644
 
+- name: A php info page
+  copy: src=files/info.php dest=/var/www/html owner=www-data group=www-data mode=0644
+
 - name: Extract prestashop installed
   unarchive: src=files/prestashop_installed.tar.gz dest=/var/www/html creates=/var/www/html/prestashop
 
