@@ -8,7 +8,7 @@
 - name: Check if stack is fine
   command: openstack stack check {{ stackname }} --wait
   register: stack_status
-  when: isstack.rc == 0
+  when: isstack.rc == 0 and docheck is defined
   ignore_errors: yes
 
 - name: Delete stack if the stack is not ok

@@ -32,10 +32,11 @@ fi
 
 invok=$(basename $0)
 fkey=""
+docheck=""
 
 if [ "$invok" = "prestashop_v4_sup.sh" ]
 then
-	ansible-playbook -vvvv prestashop_infra_v4_sup.yaml -e network=$net -e stackname=$stackname
+	ansible-playbook -vvvv -i localhost, prestashop_infra_v4_sup.yaml -e network=$net -e stackname=$stackname
         if [ $? -ne 0 ]
 	then
 		echo "Scale up failed"
@@ -46,7 +47,7 @@ fi
 
 if [ "$invok" = "prestashop_v4_sdn.sh" ]
 then
-	ansible-playbook -vvvv prestashop_infra_v4_sdn.yaml -e network=$net -e stackname=$stackname
+	ansible-playbook -vvvv -i localhost, prestashop_infra_v4_sdn.yaml -e network=$net -e stackname=$stackname
         if [ $? -ne 0 ]
 	then
 		echo "Scale down failed"
@@ -54,5 +55,12 @@ then
 	fi
 fi
 
-ansible-playbook -vvvv prestashop_infra_v4.yaml -e network=$net -e stackname=$stackname $fkey
+if [ "$invok" = "prestashop_v4_check.sh" ]
+then
+        # Checking the stack broke the asg. To fix the stack needs to be updated.
+        # So avoid the check most of the time unless check is really required.
+	docheck="-e docheck=true"
+fi
+
+ansible-playbook -vvvv prestashop_infra_v4.yaml -e network=$net -e stackname=$stackname $fkey $docheck
 ansible-playbook -vvvv prestashop_app_v4.yaml -e stackname=$stackname
