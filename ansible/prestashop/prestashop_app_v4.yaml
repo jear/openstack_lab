@@ -9,7 +9,8 @@
     - stackname: "psstack"
     - consulip: "10.10.0.3"
     - consulport: "8500"
-    - publicurl: "10.3.222.89:60080"
+#    - restddb: true
+    - forcepublicurl: "10.3.222.89:60080"
   
   roles:
     - v4/db

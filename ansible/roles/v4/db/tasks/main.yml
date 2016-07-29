@@ -8,7 +8,7 @@
     creates: /etc/yum.repos.d/epel.repo
 
 - name: Install unzip
-  yum: name=unzip state=present 
+  yum: name=unzip state=present update_cache=yes
 
 - name: Install ntpdate
   yum: name=ntpdate state=present 
@@ -64,13 +64,27 @@
 - name: Create DB admin user local
   mysql_user: name=prestashop password=prestashop1234 priv=*.*:ALL,GRANT host='localhost' state=present
 
+- name: Remove dump to reinit db
+  command: rm -f /tmp/prestashop.dump
+  when: resetdb is defined
+
 - name: Uncompress dump
-  unarchive: src=files/prestashop.dump.tar.gz dest=/tmp creates=/tmp/prestashop.dump
+  unarchive: src=files/prestashop.dump.tar.gz dest=/tmp creates=/tmp/prestashop.dump 
   register: dbinit
-    
-- name: Patch dump with ip
-  replace: dest=/tmp/prestashop.dump regexp='10.3.222.89:60080' replace='{{ publicurl }}' backup='yes'
+
+- name: Get the public ip for ha proxy
+  shell: echo $(openstack stack output show psstack server1_public_ip -f json | jq ."output_value" | sed 's/"//g'):5000
+  register: publicurl
+  delegate_to: localhost
   when: dbinit.changed
+
+- name: Patch dump with forced public url
+  replace: dest=/tmp/prestashop.dump regexp='10.3.222.89:60080' replace='{{ forcepublicurl }}' backup='yes'
+  when: dbinit.changed and forcepublicurl is defined
+
+- name: Patch dump with public url
+  replace: dest=/tmp/prestashop.dump regexp='10.3.222.89:60080' replace='{{ publicurl.stdout }}' backup='yes'
+  when: dbinit.changed and forcepublicurl is not defined
 
 - name: Setup DB
   mysql_db: name=prestashop state=present
@@ -80,7 +94,7 @@
   mysql_db: name=prestashop state=import target=/tmp/prestashop.dump
   notify: 
     - restart mysql
-  when: dbinit.changed
+  when: dbinit.changed or resetdb is defined
 
 #    - name: Copy dump to /tmp
 #      copy: src=packages/dump.sql dest=/tmp/dump.sql owner=root group=root mode=0644

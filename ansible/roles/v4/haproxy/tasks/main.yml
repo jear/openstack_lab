@@ -18,3 +18,4 @@
 
 - name: Start haproxy
   service: name=haproxy state=restarted
+
