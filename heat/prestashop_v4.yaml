@@ -103,7 +103,7 @@ resources:
     properties:
       adjustment_type: change_in_capacity
       auto_scaling_group_id: {get_resource: asg}
-      cooldown: 20
+      #cooldown: 60
       scaling_adjustment: 1
 
   scale_down_policy:
@@ -111,7 +111,7 @@ resources:
     properties:
       adjustment_type: change_in_capacity
       auto_scaling_group_id: {get_resource: asg}
-      cooldown: 20
+      #cooldown: 60
       scaling_adjustment: '-1'
 
   server1:

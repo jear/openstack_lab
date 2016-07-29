@@ -29,5 +29,30 @@ then
 	exit 1
 fi
 
-ansible-playbook -vvvv prestashop_infra_v4.yaml -e network=$net -e stackname=$stackname
+
+invok=$(basename $0)
+fkey=""
+
+if [ "$invok" = "prestashop_v4_sup.sh" ]
+then
+	ansible-playbook -vvvv prestashop_infra_v4_sup.yaml -e network=$net -e stackname=$stackname
+        if [ $? -ne 0 ]
+	then
+		echo "Scale up failed"
+		exit 1
+	fi
+fkey="-e force_host_keys=yes"
+fi
+
+if [ "$invok" = "prestashop_v4_sdn.sh" ]
+then
+	ansible-playbook -vvvv prestashop_infra_v4_sdn.yaml -e network=$net -e stackname=$stackname
+        if [ $? -ne 0 ]
+	then
+		echo "Scale down failed"
+		exit 1
+	fi
+fi
+
+ansible-playbook -vvvv prestashop_infra_v4.yaml -e network=$net -e stackname=$stackname $fkey
 ansible-playbook -vvvv prestashop_app_v4.yaml -e stackname=$stackname
