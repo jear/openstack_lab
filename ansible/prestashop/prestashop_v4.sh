@@ -36,7 +36,7 @@ docheck=""
 
 if [ "$invok" = "prestashop_v4_sup.sh" ]
 then
-	ansible-playbook -vvvv -i localhost, prestashop_infra_v4_sup.yaml -e network=$net -e stackname=$stackname
+	ansible-playbook -vvvv prestashop_infra_v4_sup.yaml -e network=$net -e stackname=$stackname
         if [ $? -ne 0 ]
 	then
 		echo "Scale up failed"
@@ -47,7 +47,7 @@ fi
 
 if [ "$invok" = "prestashop_v4_sdn.sh" ]
 then
-	ansible-playbook -vvvv -i localhost, prestashop_infra_v4_sdn.yaml -e network=$net -e stackname=$stackname
+	ansible-playbook -vvvv prestashop_infra_v4_sdn.yaml -e network=$net -e stackname=$stackname
         if [ $? -ne 0 ]
 	then
 		echo "Scale down failed"
