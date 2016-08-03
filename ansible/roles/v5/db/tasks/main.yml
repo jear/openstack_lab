@@ -1,0 +1,179 @@
+---
+# tasks file for db
+- name: Install Epel repo
+  command: rpm -Uvh https://dl.fedoraproject.org/pub/epel/epel-release-latest-6.noarch.rpm
+  retries: 2
+  delay: 2
+  args:
+    creates: /etc/yum.repos.d/epel.repo
+
+- name: Install unzip
+  yum: name=unzip state=present update_cache=yes
+
+- name: Install ntpdate
+  yum: name=ntpdate state=present 
+
+- name: Install php
+  yum: name=php state=present
+
+- name: Install mysql-server
+  yum: name=mysql-server state=present
+
+- name: Install mysql-client
+  yum: name=mysql state=present
+
+- name: Install python-mysqldb required by ansible mysql module
+  yum: name=MySQL-python state=present
+
+- name: Install libselinux-python required by ansible copy module
+  yum: name=libselinux-python state=present
+
+- name: Install php-mysql
+  yum: name=php-mysql state=present
+
+- name: Install libgd
+  yum: name=gd state=present
+
+- name: Install php-gd
+  yum: name=php-gd state=present
+
+- name: Install php5-mcrypt
+  yum: name=mcrypt state=present
+
+#    - name: Install php-db
+#      yum: name=php-db state=present
+
+- name: Install phpmyadmin
+  yum: name=phpmyadmin state=present
+
+- name: Install curl
+  yum: name=curl state=present
+
+- name: Stop host firewall
+  service: name=iptables state=stopped
+
+- name: Start https for phpmyadmin
+  service: name=httpd state=started
+
+- name: Create mount point
+  command: mkdir /data
+  args:  
+    creates: /data
+
+- name: Mounting persistent volume
+  mount: name=/data src=/dev/vdb state=mounted fstype=ext4
+  register: isvolume
+  ignore_errors: yes
+
+- name: Initializing volume
+  command: mkfs.ext4 /dev/vdb
+  when: isvolume.failed is defined
+
+- name: Now mounting
+  mount: name=/data src=/dev/vdb state=mounted fstype=ext4
+  when: isvolume.failed is defined
+
+- name: Changing ownership
+  command: chown -R mysql:mysql /data
+  when: isvolume.failed is defined
+
+- name: Changing SElinux
+  command: semanage fcontext -a -t mysqld_db_t "/data(/.*)?"
+  when: isvolume.failed is defined
+
+- name: Changing SElinux
+  command: restorecon -R -v /data
+  when: isvolume.failed is defined
+
+- name: Checking if /var/lib/mysql is a link
+  command: test -L /var/lib/mysql
+  register: islink
+  ignore_errors: yes
+
+- name: Removing real directory
+  file: path=/var/lib/mysql state=absent
+  when: islink.rc != 0
+
+- name: Linking db to /data
+  command: ln -s /data /var/lib/mysql
+  when: islink.rc != 0
+
+- name: Start mysql
+  service: name=mysqld state=started
+
+- name: Create DB admin user remote
+  mysql_user: name=prestashop password=prestashop1234 priv=*.*:ALL,GRANT host='%' state=present
+
+- name: Create DB admin user local
+  mysql_user: name=prestashop password=prestashop1234 priv=*.*:ALL,GRANT host='localhost' state=present
+
+- name: Remove dump to reinit db
+  command: rm -f /data/prestashop.dump
+  when: resetdb is defined
+
+- name: Uncompress dump
+  unarchive: src=files/prestashop.dump.tar.gz dest=/data creates=/data/prestashop.dump 
+  register: dbinit
+
+- name: Get the public ip for ha proxy
+  shell: echo $(openstack stack output show psstack server1_public_ip -f json | jq ."output_value" | sed 's/"//g'):5000
+  register: publicurl
+  delegate_to: localhost
+  when: dbinit.changed
+
+- name: Patch dump with forced public url
+  replace: dest=/data/prestashop.dump regexp='10.3.222.89:60080' replace='{{ forcepublicurl }}' backup='yes'
+  when: dbinit.changed and forcepublicurl is defined
+
+- name: Patch dump with public url
+  replace: dest=/data/prestashop.dump regexp='10.3.222.89:60080' replace='{{ publicurl.stdout }}' backup='yes'
+  when: dbinit.changed and forcepublicurl is not defined
+
+- name: Setup DB
+  mysql_db: name=prestashop state=present
+  when: dbinit.changed
+
+- name: Import DB dump
+  mysql_db: name=prestashop state=import target=/data/prestashop.dump
+  notify: 
+    - restart mysql
+  when: dbinit.changed or resetdb is defined
+
+#    - name: Copy dump to /tmp
+#      copy: src=packages/dump.sql dest=/tmp/dump.sql owner=root group=root mode=0644
+#
+#    - name: Import DB dump
+#      mysql_db: name=prestashop state=import target=/tmp/dump.sql
+#
+#    - name: Restart mysql
+#      service: name=mysqld state=restarted
+#
+#    - name : Allow DB to listen on 0.0.0.0
+#      replace: dest=/etc/mysql/my.cnf regexp='bind-address\s+=\s+127\.0\.0\.1' replace='bind-address = 0.0.0.0' backup=yes
+#
+#    - name: Restart mysql
+#      service: name=mysql state=restarted
+#
+- name: Allow mysql access step 1
+  replace: dest=/etc/httpd/conf.d/phpMyAdmin.conf regexp='Allow from 127.0.0.1' replace='Allow from all' backup=yes 
+
+- name: Allow mysql access step 2
+  replace: dest=/etc/httpd/conf.d/phpMyAdmin.conf regexp='Deny from All' replace='' backup=yes 
+  notify:
+    - restart mysql
+
+- name: Register service
+  uri: 
+    url: "http://{{ consulip }}:{{ consulport }}/v1/agent/service/register"
+    method: POST 
+    body: '{ "ID": "{{ stackname }}-db", "Name": "{{ stackname }}-db", "Address": "{{ ansible_default_ipv4.address }}", "Port": 3306 }'
+    body_format: json
+  delegate_to: bastion
+
+- name: Register a check for mysql
+  uri: 
+    url: "http://{{ consulip }}:{{ consulport }}/v1/agent/check/register"
+    method: POST 
+    body: '{ "ID": "chk{{ stackname }}-db", "Name": "mysql TCP check", "TCP": "{{ ansible_default_ipv4.address }}:3306", "Interval": "10s", "service_id": "{{ stackname }}-db" }'
+    body_format: json
+  delegate_to: bastion

@@ -1,0 +1,22 @@
+---
+# tasks file for haproxy
+    
+- name: Install haproxy
+  apt: name=haproxy state=present
+
+- name: Get number of web server
+  shell : openstack stack output show {{ stackname }} asg_size -f json | jq ."output_value"
+  delegate_to: localhost
+  register: webnb
+
+- name: Configure haproxy deploy configuration file template
+  template: src=templates/haproxy.cfg dest=/etc/haproxy/haproxy.cfg
+
+- name: Configure haproxy add line to conf file
+  lineinfile: dest=/etc/haproxy/haproxy.cfg line="    server  web{{ item }} {{ stackname}}-asg-{{ item }}.service.consul:80 check" insertafter="    balance     roundrobin"
+  with_sequence: count={{ webnb.stdout }}
+
+- name: Start haproxy
+  service: name=haproxy state=restarted
+  ignore_errors: yes
+
