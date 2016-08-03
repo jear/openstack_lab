@@ -77,14 +77,6 @@
   command: chown -R mysql:mysql /data
   when: isvolume.failed is defined
 
-- name: Changing SElinux
-  command: semanage fcontext -a -t mysqld_db_t "/data(/.*)?"
-  when: isvolume.failed is defined
-
-- name: Changing SElinux
-  command: restorecon -R -v /data
-  when: isvolume.failed is defined
-
 - name: Checking if /var/lib/mysql is a link
   command: test -L /var/lib/mysql
   register: islink
@@ -96,6 +88,18 @@
 
 - name: Linking db to /data
   command: ln -s /data /var/lib/mysql
+  when: islink.rc != 0
+
+- name: Changing SElinux
+  command: semanage fcontext -a -t mysqld_db_t "/data(/.*)?"
+  when: islink.rc != 0
+
+- name: Changing SElinux
+  command: restorecon -R -v /data
+  when: islink.rc != 0
+
+- name: Changing SElinux
+  command: restorecon -R -v /var/lib/mysql
   when: islink.rc != 0
 
 - name: Start mysql
