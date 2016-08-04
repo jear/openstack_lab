@@ -7,9 +7,9 @@
 
   vars:
     - stackname: "psstack"
-    - consulip: "10.10.0.3"
+    - consulip: "10.10.0.5"
     - consulport: "8500"
-#    - resetdb: true
+    - resetdb: true
     - forcepublicurl: "10.3.222.89:60080"
   
   roles:
@@ -21,7 +21,7 @@
 
   vars:
     - stackname: "psstack"
-    - consulip: "10.10.0.3"
+    - consulip: "10.10.0.5"
     - consulport: "8500"
   
   roles:
@@ -33,7 +33,7 @@
 
   vars:
     - stackname: "psstack"
-    - consulip: "10.10.0.3"
+    - consulip: "10.10.0.5"
     - consulport: "8500"
   
   roles:
