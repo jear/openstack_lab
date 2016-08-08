@@ -340,25 +340,43 @@ To do that we will install a register service, we will use the Consul applicatio
 Consul is a nice application, we can register names using rest API calls. The names can be retrieve using rest queries, but Consul is also compatible with the DNS protocol so it can be queried using standard dns tools.
 
 You will create your first ansible playbook, this playbook will do :
-* Deploy using Heat a new debian instance in a new network. Opening port 53 (DNS) from anywhere, 8500 (API + UI) from default. It means management will not be accessible publicly.
+* Deploy using Heat a new debian instance in a new network. Opening port 53 (DNS) from anywhere, 8500 (API + UI) from default. It means API will not be accessible publicly.
 * Download consul zip from https://releases.hashicorp.com/consul/0.6.4/consul_0.6.4_linux_amd64.zip .
 * Extract consul in /usr/local/bin.
 * Create a systemd service file for consul.
 * Create a configuration file to set dns port from 8000 (default consul port) to 53.
 * Execute it in development mode, also activate the ui (web interface) option. It will be run as root.
 
-Of course this is to make our consul installation as simple as possible, this is not suitable for a real production usage. For production, we will have to create a cluster, run it as with a system account (not root) and use dnsmasq or a firewall rule to redirect traffic form port 53 to default consul one (8600).
+Of course this is to make our consul installation as simple as possible, this is not suitable for a real production usage. For production, we will have to create a cluster, run it with a system account (not root) and use dnsmasq or a firewall rule to redirect traffic form port 53 to default consul one (8600).
 
 1. Create a new **heat template**, by copying the prestashop one.
 ```
+cd ~/openstack_lab/heat
 cp prestashop_v1.sh myconsul_v1.sh
 cp prestashop_v1.yaml myconsul_v1.yaml
 cp prestashop_v1_param.yaml myconsul_v1_param.yaml
 ```
 2. Adapt those files to meet the above requirements.
 3. Create a new **ansible playbook**, by copying the prestashop one.
-`cp -r prestashop myconsul`
-4. Adapt files into myconsul to meet the above requirements.
+```
+cd ~/openstack_lab/ansible/consul
+cp ../ansible/*v1* .
+mv prestashop_v1.sh myconsul.sh
+mv prestashop_infra_v1.yaml myconsul_infra.yaml
+mv prestashop_app_v1.yaml myconsul_app.yaml
+```
+4. Adapt the `myconsul*` files:
+  * Update the host specifying "{{ stackname }}-consul".
+  * Update the variable sections then the task sections.
+  * Configuration file and systemd configuration file template are located under the template directory.
+
+If you are stuck, you can call the trainer or look at `consul*` files as an example.
+5. Deploy your consul.
+6. Try to connect on your consul server using the ui.
+7. You can use the command in query.txt to register a service and verify with the ui.
+8. Test that consul is working fine using dig.
+
+####  
 
 
 
