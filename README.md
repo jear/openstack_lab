@@ -374,9 +374,4 @@ If you are stuck, you can call the trainer or look at `consul*` files as an exam
 5. Deploy your consul.
 6. Try to connect on your consul server using the ui.
 7. You can use the command in query.txt to register a service and verify with the ui.
-8. Test that consul is working fine using dig.
-
-####  
-
-
-
+8. Test that consul is working fine using dig. `dig @127.0.0.1 -p 8600 consul.service.consul` and `dig @127.0.0.1 -p 8600 redis2.service.consul`
