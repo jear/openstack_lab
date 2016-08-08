@@ -1,0 +1,1 @@
+iptables -t nat -A PREROUTING --dst 10.3.222.89 -p tcp --dport 60080 -j DNAT --to-destination 172.24.9.66:80

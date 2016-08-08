@@ -1,0 +1,14 @@
+---
+# This playbook deploys prestashop infra.  
+- hosts: localhost
+  #remote_user: root
+
+  vars:
+    - network: "10.0.1.0"
+    - stackname: "psstack"
+    - stackcmd: "../../heat/prestashop_v3.sh"
+    - stackoutput: [ "server1_private_ip", "server2_private_ip" ]
+
+  roles:
+    - v3/heatstack
+    - { role: v3/hostkeys, when: newstack.changed or force_host_keys is defined }

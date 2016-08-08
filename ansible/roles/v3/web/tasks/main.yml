@@ -1,0 +1,64 @@
+---
+# tasks file for web
+- name: Install unzip
+  apt: name=unzip state=present update_cache=yes cache_valid_time=3600
+
+- name: Install php
+  apt: name=php5 state=present
+
+- name: Install mysql-client
+  apt: name=mysql-client state=present
+
+- name: Install php5-mysql
+  apt: name=php5-mysql state=present
+
+- name: Install libgd3
+  apt: name=libgd3 state=present
+
+- name: Install php5-gd
+  apt: name=php5-gd state=present
+
+- name: Install php5-mcrypt
+  apt: name=mcrypt state=present
+
+- name: Install php5-mcrypt
+  apt: name=php5-mcrypt state=present
+
+- name: Install php-db
+  apt: name=php-db state=present
+
+#- name: Copy prestashop installed
+#  copy: src=files/prestashop_installed.tar.gz dest=/var/www/html owner=root group=root mode=0644
+
+- name: Extract prestashop installed
+  unarchive: src=files/prestashop_installed.tar.gz dest=/var/www/html creates=/var/www/html/prestashop
+
+- name: Update settings.conf
+  replace: dest=/var/www/html/prestashop/config/settings.inc.php regexp='prestashopstack-db.service.consul' replace='{{ stackname }}-db.service.consul' backup='yes'
+
+- name: Cleanup prestashop cache
+  command: rm -rf /var/www/html/prestashop/cache/smarty/cache
+
+- name: Restart apache
+  service: name=apache2 state=restarted
+
+#- name : Change write to www-data
+#  shell: ls -ald prestashop | grep www-data || chown -R www-data:www-data prestashop
+#  args:
+#    chdir: /var/www/html
+
+- name: Register service
+  uri: 
+    url: "http://{{ consulip }}:{{ consulport }}/v1/agent/service/register"
+    method: POST 
+    body: '{ "ID": "{{ stackname }}-web", "Name": "{{ stackname }}-web", "Address": "{{ ansible_default_ipv4.address }}", "Port": 80 }'
+    body_format: json
+  delegate_to: bastion
+
+- name: Register a check for web
+  uri: 
+    url: "http://{{ consulip }}:{{ consulport }}/v1/agent/check/register"
+    method: POST 
+    body: '{ "ID": "chk-{{ stackname }}-web", "Name": "Prestashop HTTP check", "HTTP": "http://{{ ansible_default_ipv4.address }}", "Interval": "10s",  "service_id": "{{ stackname }}-web" }'
+    body_format: json
+  delegate_to: bastion

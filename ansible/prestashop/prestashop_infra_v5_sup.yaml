@@ -1,0 +1,18 @@
+---
+# This playbook deploys prestashop infra.  
+- hosts: localhost
+  #remote_user: root
+
+  vars:
+    - network: "10.0.1.0"
+    - stackname: "psstack"
+
+  tasks:
+    - name: Get scale up url
+      shell: openstack stack output show {{ stackname }} scale_up_url -f json | jq ."output_value" | sed 's/"//g'
+      register: supurl
+     
+    - name: Post to scale up url to trigger a new node
+      uri: 
+        url: "{{ supurl.stdout }}"
+        method: POST

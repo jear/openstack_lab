@@ -217,10 +217,8 @@ def main():
         inventory_args = dict(
             refresh=args.refresh,
             config_files=config_files,
-            #private=args.private,
-            private=True,
+            private=args.private,
         )
-	#import pdb; pdb.set_trace()
         if hasattr(shade.inventory.OpenStackInventory, 'extra_config'):
             inventory_args.update(dict(
                 config_key='ansible',

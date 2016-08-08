@@ -1,0 +1,32 @@
+---
+# tasks file for hostkeys
+- name: Get system ip using heat outputs
+  shell: openstack stack output show {{ stackname }} {{ item }} -f json | jq ."output_value" | sed 's/"//g'
+  register: sysip 
+  with_items:
+    - "{{ stackoutput }}"
+
+#- debug: msg="{{ sysip }}"
+
+- name: Wait for instance to be ready
+  wait_for: port=22 delay=10 host={{ item.stdout }}
+  delegate_to: bastion
+  with_items:
+    - "{{ sysip.results }}"
+
+- name: Get new host keys
+  command: ssh-keyscan -v -t rsa "{{ item.stdout }}"
+  delegate_to: bastion
+  register: hostkeys
+  with_items:
+    - "{{ sysip.results }}"
+
+- name: Remove old host keys
+  command: ssh-keygen -R "{{ item.stdout }}"
+  with_items:
+    - "{{ sysip.results }}"
+
+- name: Register keys
+  shell: echo "{{ item.stdout }}" >> ~/.ssh/known_hosts
+  with_items:
+    - "{{ hostkeys.results }}"

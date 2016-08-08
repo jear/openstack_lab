@@ -1,0 +1,14 @@
+---
+# This playbook deploys consul infra.  
+- hosts: localhost
+  #remote_user: root
+
+  vars:
+    - network: "10.0.1.0"
+    - stackname: "consulstack"
+    - stackcmd: "../../heat/consul_v1.sh"
+    - stackoutput: [ "server1_private_ip" ]
+
+  roles:
+    - v1/heatstack
+    - { role: v1/hostkeys, when: newstack.changed or force_host_keys is defined }
