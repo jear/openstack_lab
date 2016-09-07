@@ -16,19 +16,30 @@ app = Flask(__name__)
 # 3. Generate the corresponding image (thanks to the response of the HTTP gaming request)
 # 4. Send an message using rabbitMQ on a service that will listen to this queue for the purpose of notifying the user by mail.
 
-@app.route('/play/<id>', methods=['POST'])
-def index(id):
-    return "This is supposed to play + (id {}).".format(id)
+def change_player_status():
+    print("changing player status")
+    return 0
 
-@app.route('/image')
+def notify_user():
+    print("notifying user")
+    return 0
+
 def genere_image():
-    print("request received: route {}").format(request.path)
-    r = requests.post(os.getenv('PLAYER_SERVICE', 'http://127.0.0.1:5000/play/1'))
-    print(r.text);
+    print("generating image")
+    r = requests.get(os.getenv('PLAYER_SERVICE'))
     mon_image = StringIO()
-    Image.new("RGB", (300,300), "#92C41D").save(mon_image, 'BMP')
+    print("image color: " + r.json()["color"]);
+    Image.new("RGB", (300,300), r.json()["color"]).save(mon_image, 'BMP')
     res = Flask.make_response(app, mon_image.getvalue())
     res.mimetype = "image/bmp"  # à la place de "text/html"
+    return res
+
+@app.route('/play/<id>', methods=['POST'])
+def index(id):
+    print("request received: route {}").format(request.path)
+    change_player_status()
+    res = genere_image()
+    notify_user()
     return res
 
 if __name__ == '__main__':

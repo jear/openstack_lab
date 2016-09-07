@@ -46,7 +46,7 @@ ForwardAgent yes
 #   TunnelDevice any:any
 #   PermitLocalCommand no
 #   VisualHostKey no
-ProxyCommand ssh -q -W %h:%p debian@172.24.10.11
+ProxyCommand ssh -q -W %h:%p debian@bastion
 #   RekeyLimit 1G 1h
     SendEnv LANG LC_*
     HashKnownHosts yes

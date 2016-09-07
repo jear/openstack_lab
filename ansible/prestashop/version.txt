@@ -1,0 +1,5 @@
+v1 = Prestashop install
+v2 = Prestashop with consul
+v3 = Prestashop with consul + automatic install
+v4 = Prestashop with consul + automatic install + asg + haproxy
+v5 = Prestashop with consul + automatic install + asg + haproxy + permanent data
