@@ -1,6 +1,7 @@
 .vagrant
 vagrant_ansible_inventory_default
 tmp
+node_modules
 *.retry
 *.pyc
 *.swo
