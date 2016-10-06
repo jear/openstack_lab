@@ -6,3 +6,4 @@ node_modules
 *.pyc
 *.swo
 *.swp
+*.log
