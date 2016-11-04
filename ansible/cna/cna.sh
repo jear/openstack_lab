@@ -63,4 +63,4 @@ then
 fi
 
 ansible-playbook -vvvv cna_infra.yaml -e network=$net -e stackname=$stackname $fkey $docheck
-#ansible-playbook -vvvv cna_app.yaml -e stackname=$stackname
+ansible-playbook -vvvv cna_app.yaml -e stackname=$stackname

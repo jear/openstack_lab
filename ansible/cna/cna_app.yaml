@@ -1,40 +1,201 @@
 ---
 # This playbook deploys cna app.  
-- hosts: "{{ stackname }}-db"
-  remote_user: centos
+- hosts: "{{ stackname }}-*"
+  remote_user: debian
   become: yes
   #become_method: sudo
 
   vars:
-    - stackname: "psstack"
-    - consulip: "10.10.0.3"
-    - consulport: "8500"
-#    - restddb: true
-    - forcepublicurl: "10.3.222.89:60080"
-  
-  roles:
-    - v5/db
+    - stackname: "mstack"
 
-- hosts: "{{ stackname }}-asg*"
+  tasks:
+    - name: Install curl  
+      apt: name="curl" state="present" update_cache=yes cache_valid_time=7200
+
+    - name: Install python3-pip  
+      apt: name="python3-pip" state="present"
+
+    - name: Install python3-flask  
+      apt: name="python3-flask" state="present"
+
+#- hosts: "{{ stackname }}-i:{{ stackname }}-s:{{ stackname }}-b:{{ stackname }}-p"
+- hosts: "{{ stackname }}-i"
+  remote_user: debian
   become: yes
   #become_method: sudo
 
   vars:
-    - stackname: "psstack"
-    - consulip: "10.10.0.3"
-    - consulport: "8500"
-  
-  roles:
-    - v5/web
+    - stackname: "mstack"
+    - service: "{{ ansible_nodename | regex_replace('mstack-', '') }}"
 
-- hosts: "{{ stackname }}-ha"
+  tasks:
+    - name: Create a user for the service
+      user: name={{ service }} shell=/bin/bash system=yes
+
+    - name: Copy services scripts
+      copy: src=microservices/{{ service }}/{{ item }} dest=/home/{{ service }} owner={{ service }} group={{ service }}
+      with_items:
+        - "config.py"
+        - "{{ service }}.py"
+
+    - name: Set service executable
+      command: chmod u+x /home/{{ service }}/{{ service }}.py
+
+    - name: Create cna service
+      template: >
+        src=microservices/{{ service }}/templates/{{ service }}.service.j2
+        dest=/etc/systemd/system/{{ service }}.service
+        owner={{ service }}
+        mode=0644
+
+    - name: Create cna configuration file
+      template: >
+        src=microservices/{{ service }}/templates/{{ service }}.conf.j2
+        dest=/home/{{ service }}/{{ service }}.conf
+        owner={{ service }}
+        mode=0644
+
+
+- hosts: "{{ stackname }}-i"
+  remote_user: debian
   become: yes
-  #become_method: sudo
 
   vars:
-    - stackname: "psstack"
+    - stackname: "mstack"
     - consulip: "10.10.0.3"
     - consulport: "8500"
-  
-  roles:
-    - v5/haproxy
+
+  tasks:
+    - name: Install mysqlclient for python3
+      pip: name="mysqlclient" executable=pip3
+
+    - name: Run service
+      service: name=i state=started
+
+    - name: Register service i into consul
+      uri: 
+        url: "http://{{ consulip }}:{{ consulport }}/v1/agent/service/register"
+        method: POST 
+        body: '{ "ID": "{{ ansible_nodename }}", "Name": "{{ ansible_nodename }}", "Address": "{{ ansible_default_ipv4.address }}", "Port": 8080 }'
+        body_format: json
+      delegate_to: bastion
+    
+    - name: Register a check for service i
+      uri: 
+        url: "http://{{ consulip }}:{{ consulport }}/v1/agent/check/register"
+        method: POST 
+        body: '{ "ID": "chk{{ ansible_nodename }}", "Name": "mysql TCP check", "TCP": "{{ ansible_default_ipv4.address }}:8080", "Interval": "10s", "service_id": "{{ ansible_nodename }}" }'
+        body_format: json
+      delegate_to: bastion
+
+
+
+- hosts: "{{ stackname }}-s"
+  remote_user: debian
+  become: yes
+
+  vars:
+    - stackname: "mstack"
+    - consulip: "10.10.0.3"
+    - consulport: "8500"
+
+  tasks:
+    - name: Register service s into consul
+      uri: 
+        url: "http://{{ consulip }}:{{ consulport }}/v1/agent/service/register"
+        method: POST 
+        body: '{ "ID": "{{ ansible_nodename }}", "Name": "{{ ansible_nodename }}", "Address": "{{ ansible_default_ipv4.address }}", "Port": 8081 }'
+        body_format: json
+      delegate_to: bastion
+    
+    - name: Register a check for mysql
+      uri: 
+        url: "http://{{ consulip }}:{{ consulport }}/v1/agent/check/register"
+        method: POST 
+        body: '{ "ID": "chk{{ ansible_nodename }}", "Name": "mysql TCP check", "TCP": "{{ ansible_default_ipv4.address }}:8081", "Interval": "10s", "service_id": "{{ ansible_nodename }}" }'
+        body_format: json
+      delegate_to: bastion
+
+
+
+- hosts: "{{ stackname }}-b"
+  remote_user: debian
+  become: yes
+
+  vars:
+    - stackname: "mstack"
+    - consulip: "10.10.0.3"
+    - consulport: "8500"
+
+  tasks:
+    - name: Register service b into consul
+      uri: 
+        url: "http://{{ consulip }}:{{ consulport }}/v1/agent/service/register"
+        method: POST 
+        body: '{ "ID": "{{ ansible_nodename }}", "Name": "{{ ansible_nodename }}", "Address": "{{ ansible_default_ipv4.address }}", "Port": 8082 }'
+        body_format: json
+      delegate_to: bastion
+    
+    - name: Register a check for mysql
+      uri: 
+        url: "http://{{ consulip }}:{{ consulport }}/v1/agent/check/register"
+        method: POST 
+        body: '{ "ID": "chk{{ ansible_nodename }}", "Name": "mysql TCP check", "TCP": "{{ ansible_default_ipv4.address }}:8082", "Interval": "10s", "service_id": "{{ ansible_nodename }}" }'
+        body_format: json
+      delegate_to: bastion
+
+
+
+- hosts: "{{ stackname }}-p"
+  remote_user: debian
+  become: yes
+
+  vars:
+    - stackname: "mstack"
+    - consulip: "10.10.0.3"
+    - consulport: "8500"
+
+  tasks:
+    - name: Register service p into consul
+      uri: 
+        url: "http://{{ consulip }}:{{ consulport }}/v1/agent/service/register"
+        method: POST 
+        body: '{ "ID": "{{ ansible_nodename }}", "Name": "{{ ansible_nodename }}", "Address": "{{ ansible_default_ipv4.address }}", "Port": 8083 }'
+        body_format: json
+      delegate_to: bastion
+    
+    - name: Register a check for mysql
+      uri: 
+        url: "http://{{ consulip }}:{{ consulport }}/v1/agent/check/register"
+        method: POST 
+        body: '{ "ID": "chk{{ ansible_nodename }}", "Name": "mysql TCP check", "TCP": "{{ ansible_default_ipv4.address }}:8083", "Interval": "10s", "service_id": "{{ ansible_nodename }}" }'
+        body_format: json
+      delegate_to: bastion
+
+
+
+- hosts: "{{ stackname }}-wasg*"
+  remote_user: debian
+  become: yes
+
+  vars:
+    - stackname: "mstack"
+    - consulip: "10.10.0.3"
+    - consulport: "8500"
+
+  tasks:
+    - name: Register all w services into consul
+      uri: 
+        url: "http://{{ consulip }}:{{ consulport }}/v1/agent/service/register"
+        method: POST 
+        body: '{ "ID": "{{ ansible_nodename }}", "Name": "{{ stackname }}-wasg-{{ play_hosts.index(inventory_hostname) | int + 1 }}", "Address": "{{ ansible_default_ipv4.address }}", "Port": 8090 }'
+        body_format: json
+      delegate_to: bastion
+    
+    - name: Register a check for web
+      uri: 
+        url: "http://{{ consulip }}:{{ consulport }}/v1/agent/check/register"
+        method: POST 
+        body: '{ "ID": "chk-{{ ansible_nodename }}", "Name": "Prestashop HTTP check", "HTTP": "http://{{ ansible_default_ipv4.address }}", "Interval": "10s",  "service_id": "{{ ansible_nodename }}" }'
+        body_format: json
+      delegate_to: bastion
