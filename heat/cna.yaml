@@ -445,5 +445,5 @@ outputs:
     description: >
       This is a list of first ip addresses of the servers in the group
       for a specified network.
-    value: {get_attr: [wasg, outputs_list, networks, {get_resource: private_net }, 0]}
+    value: {get_attr: [wasg, outputs_list, networks, {get_resource: private_net2 }, 0]}
 
