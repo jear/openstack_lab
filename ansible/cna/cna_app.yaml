@@ -74,6 +74,11 @@
     - name: Run service
       service: name=i state=started
 
+    - name: Open port to access the mysql db
+      command: openstack security group rule create --proto tcp --src-group $(openstack security group show mstack -f json | jq -r ."id") --dst-port 3306 psstack
+      delegate_to: localhost
+      run_once: true
+
     - name: Register service i into consul
       uri: 
         url: "http://{{ consulip }}:{{ consulport }}/v1/agent/service/register"
