@@ -116,7 +116,7 @@
   when: resetdb is defined
 
 - name: Uncompress dump
-  unarchive: src=files/prestashop_fullcustomer.dump.tar.gz dest=/data/prestashop.dump creates=/data/prestashop.dump 
+  unarchive: src=files/prestashop.dump.tar.gz dest=/data creates=/data/prestashop.dump 
   register: dbinit
 
 - name: Get the public ip for ha proxy
