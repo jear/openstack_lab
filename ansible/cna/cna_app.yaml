@@ -69,13 +69,16 @@
 
   tasks:
     - name: Install mysqlclient for python3
+      apt: name="libmysqlclient-dev" state=present
+
+    - name: Install mysqlclient for python3
       pip: name="mysqlclient" executable=pip3
 
     - name: Run service
       service: name=i state=started
 
     - name: Open port to access the mysql db
-      command: openstack security group rule create --proto tcp --src-group $(openstack security group show mstack -f json | jq -r ."id") --dst-port 3306 psstack
+      shell: openstack security group rule create --proto tcp --src-group $(openstack security group show mstack -f json | jq -r ."id") --dst-port 3306 psstack
       delegate_to: localhost
       run_once: true
 
