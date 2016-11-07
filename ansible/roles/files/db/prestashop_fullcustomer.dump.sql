@@ -1,0 +1,1 @@
+../../../../cloud_native_app/microservices/i/dump/prestashop_fullcustomer.dump.sql
