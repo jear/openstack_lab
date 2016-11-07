@@ -18,8 +18,8 @@
     - name: Install python3-flask  
       apt: name="python3-flask" state="present"
 
-#- hosts: "{{ stackname }}-i:{{ stackname }}-s:{{ stackname }}-b:{{ stackname }}-p"
-- hosts: "{{ stackname }}-i"
+- hosts: "{{ stackname }}-i:{{ stackname }}-s:{{ stackname }}-b:{{ stackname }}-p"
+  #- hosts: "{{ stackname }}-i"
   remote_user: debian
   become: yes
   #become_method: sudo
@@ -27,6 +27,7 @@
   vars:
     - stackname: "mstack"
     - service: "{{ ansible_nodename | regex_replace('mstack-', '') }}"
+    - openstack_ctrl: "10.3.222.89"
 
   tasks:
     - name: Create a user for the service
@@ -80,20 +81,20 @@
     - name: Open port to access the mysql db
       shell: openstack security group rule create --proto tcp --src-group $(openstack security group show mstack -f json | jq -r ."id") --dst-port 3306 psstack
       delegate_to: localhost
-      run_once: true
+      ignore_errors: true
 
     - name: Register service i into consul
-      uri: 
+      uri:
         url: "http://{{ consulip }}:{{ consulport }}/v1/agent/service/register"
-        method: POST 
+        method: POST
         body: '{ "ID": "{{ ansible_nodename }}", "Name": "{{ ansible_nodename }}", "Address": "{{ ansible_default_ipv4.address }}", "Port": 8080 }'
         body_format: json
       delegate_to: bastion
-    
+
     - name: Register a check for service i
-      uri: 
+      uri:
         url: "http://{{ consulip }}:{{ consulport }}/v1/agent/check/register"
-        method: POST 
+        method: POST
         body: '{ "ID": "chk{{ ansible_nodename }}", "Name": "mysql TCP check", "TCP": "{{ ansible_default_ipv4.address }}:8080", "Interval": "10s", "service_id": "{{ ansible_nodename }}" }'
         body_format: json
       delegate_to: bastion
@@ -110,6 +111,12 @@
     - consulport: "8500"
 
   tasks:
+    - name: Install python3-redis
+      apt: name="python3-redis" state=present
+
+    - name: Run service
+      service: name=s state=started
+
     - name: Register service s into consul
       uri: 
         url: "http://{{ consulip }}:{{ consulport }}/v1/agent/service/register"
@@ -195,17 +202,91 @@
 
   tasks:
     - name: Register all w services into consul
-      uri: 
+      uri:
         url: "http://{{ consulip }}:{{ consulport }}/v1/agent/service/register"
-        method: POST 
+        method: POST
         body: '{ "ID": "{{ ansible_nodename }}", "Name": "{{ stackname }}-wasg-{{ play_hosts.index(inventory_hostname) | int + 1 }}", "Address": "{{ ansible_default_ipv4.address }}", "Port": 8090 }'
         body_format: json
       delegate_to: bastion
-    
+
     - name: Register a check for web
-      uri: 
+      uri:
         url: "http://{{ consulip }}:{{ consulport }}/v1/agent/check/register"
-        method: POST 
+        method: POST
         body: '{ "ID": "chk-{{ ansible_nodename }}", "Name": "Prestashop HTTP check", "HTTP": "http://{{ ansible_default_ipv4.address }}", "Interval": "10s",  "service_id": "{{ ansible_nodename }}" }'
+        body_format: json
+      delegate_to: bastion
+
+
+- hosts: "{{ stackname }}-rd"
+  remote_user: debian
+  become: yes
+
+  vars:
+    - stackname: "mstack"
+    - consulip: "10.10.0.3"
+    - consulport: "8500"
+
+  tasks:
+    - name: Install redis-server
+      apt: name="redis-server" state=present
+
+    - name: Create mount point
+      command: mkdir /data
+      args:
+        creates: /data
+
+    - name: Mounting persistent volume
+      mount: name=/data src=/dev/vdb state=mounted fstype=ext4
+      register: isvolume
+      ignore_errors: yes
+
+    - name: Initializing volume
+      command: mkfs.ext4 /dev/vdb
+      when: isvolume.failed is defined
+
+    - name: Now mounting
+      mount: name=/data src=/dev/vdb state=mounted fstype=ext4
+      when: isvolume.failed is defined
+
+    - name: Changing ownership
+      command: chown -R redis:redis /data
+      when: isvolume.failed is defined
+
+    - name: Checking if /var/lib/redis is a link
+      command: test -L /var/lib/mysql
+      register: islink
+      ignore_errors: yes
+
+    - name: Removing real directory
+      file: path=/var/lib/redis state=absent
+      when: islink.rc != 0
+
+    - name: Linking db to /data
+      command: ln -s /data /var/lib/redis
+      when: islink.rc != 0
+
+    - name: Configure redis to listen on all interfaces
+      replace: dest=/etc/redis/redis.conf regexp='^bind 127.0.0.1' replace='bind 0.0.0.0' backup='yes'
+
+    - name: Configure appendonly mode
+      replace: dest=/etc/redis/redis.conf regexp='^appendonly no' replace='appendonly yes' backup='yes'
+
+    - name: Run service
+      service: name=redis-server state=restarted
+
+    - name: Register service redis into consul
+      uri:
+        url: "http://{{ consulip }}:{{ consulport }}/v1/agent/service/register"
+        method: POST
+        body: '{ "ID": "{{ ansible_nodename }}", "Name": "{{ ansible_nodename }}", "Address": "{{ ansible_default_ipv4.address }}", "Port": 6379 }'
+        body_format: json
+      delegate_to: bastion
+
+    - name: Register a check for redis
+      uri:
+        url: "http://{{ consulip }}:{{ consulport }}/v1/agent/check/register"
+        method: POST
+        body: '{ "ID": "chk{{ ansible_nodename }}", "Name": "mysql TCP check", "TCP": "{{ ansible_default_ipv4.address }}:6379", "Interval": "10s", "service_id": "{{ ansible_nodename }}" }'
         body_format: json
       delegate_to: bastion
