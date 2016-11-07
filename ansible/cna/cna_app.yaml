@@ -9,13 +9,16 @@
     - stackname: "mstack"
 
   tasks:
-    - name: Install curl  
+    - name: Install curl
       apt: name="curl" state="present" update_cache=yes cache_valid_time=7200
 
-    - name: Install python3-pip  
+    - name: Install links for debugging
+      apt: name="links" state="present"
+
+    - name: Install python3-pip
       apt: name="python3-pip" state="present"
 
-    - name: Install python3-flask  
+    - name: Install python3-flask
       apt: name="python3-flask" state="present"
 
 - hosts: "{{ stackname }}-i:{{ stackname }}-s:{{ stackname }}-b:{{ stackname }}-p"
@@ -124,11 +127,11 @@
         body: '{ "ID": "{{ ansible_nodename }}", "Name": "{{ ansible_nodename }}", "Address": "{{ ansible_default_ipv4.address }}", "Port": 8081 }'
         body_format: json
       delegate_to: bastion
-    
-    - name: Register a check for mysql
-      uri: 
+
+    - name: Register a check for service s
+      uri:
         url: "http://{{ consulip }}:{{ consulport }}/v1/agent/check/register"
-        method: POST 
+        method: POST
         body: '{ "ID": "chk{{ ansible_nodename }}", "Name": "mysql TCP check", "TCP": "{{ ansible_default_ipv4.address }}:8081", "Interval": "10s", "service_id": "{{ ansible_nodename }}" }'
         body_format: json
       delegate_to: bastion
@@ -145,18 +148,24 @@
     - consulport: "8500"
 
   tasks:
+    - name: Install mysqlclient for python3
+      pip: name="pika" executable=pip3
+
+    - name: Run service
+      service: name=b state=started
+
     - name: Register service b into consul
-      uri: 
+      uri:
         url: "http://{{ consulip }}:{{ consulport }}/v1/agent/service/register"
-        method: POST 
+        method: POST
         body: '{ "ID": "{{ ansible_nodename }}", "Name": "{{ ansible_nodename }}", "Address": "{{ ansible_default_ipv4.address }}", "Port": 8082 }'
         body_format: json
       delegate_to: bastion
-    
-    - name: Register a check for mysql
-      uri: 
+
+    - name: Register a check for service b
+      uri:
         url: "http://{{ consulip }}:{{ consulport }}/v1/agent/check/register"
-        method: POST 
+        method: POST
         body: '{ "ID": "chk{{ ansible_nodename }}", "Name": "mysql TCP check", "TCP": "{{ ansible_default_ipv4.address }}:8082", "Interval": "10s", "service_id": "{{ ansible_nodename }}" }'
         body_format: json
       delegate_to: bastion
@@ -288,5 +297,45 @@
         url: "http://{{ consulip }}:{{ consulport }}/v1/agent/check/register"
         method: POST
         body: '{ "ID": "chk{{ ansible_nodename }}", "Name": "mysql TCP check", "TCP": "{{ ansible_default_ipv4.address }}:6379", "Interval": "10s", "service_id": "{{ ansible_nodename }}" }'
+        body_format: json
+      delegate_to: bastion
+
+
+
+- hosts: "{{ stackname }}-web"
+  remote_user: debian
+  become: yes
+
+  vars:
+    - stackname: "mstack"
+    - consulip: "10.10.0.3"
+    - consulport: "8500"
+
+  tasks:
+    - name: Install apache
+      apt: name="apache2" state=present
+
+    - name: Copy index.html file
+      copy: src=web/ dest=/var/www/html owner=www-data group=www-data
+
+    - name: Copy js files
+      copy: src=web/js dest=/var/www/html owner=www-data group=www-data
+
+    - name: Run service
+      service: name=apache2 state=restarted
+
+    - name: Register service web into consul
+      uri:
+        url: "http://{{ consulip }}:{{ consulport }}/v1/agent/service/register"
+        method: POST
+        body: '{ "ID": "{{ ansible_nodename }}", "Name": "{{ ansible_nodename }}", "Address": "{{ ansible_default_ipv4.address }}", "Port": 80 }'
+        body_format: json
+      delegate_to: bastion
+
+    - name: Register a check for web
+      uri:
+        url: "http://{{ consulip }}:{{ consulport }}/v1/agent/check/register"
+        method: POST
+        body: '{ "ID": "chk{{ ansible_nodename }}", "Name": "mysql TCP check", "TCP": "{{ ansible_default_ipv4.address }}:80", "Interval": "10s", "service_id": "{{ ansible_nodename }}" }'
         body_format: json
       delegate_to: bastion
