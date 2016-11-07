@@ -321,6 +321,14 @@
     - name: Copy js files
       copy: src=web/js dest=/var/www/html owner=www-data group=www-data
 
+    - name: Create cna config
+      template: >
+        src=web/templates/config.js.j2
+        dest=/var/www/html/js/config.js
+        owner=www-data
+        group=www-data
+        mode=0644
+
     - name: Run service
       service: name=apache2 state=restarted
 
