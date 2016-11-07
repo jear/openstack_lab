@@ -395,6 +395,16 @@ resources:
           protocol: tcp
           port_range_min: 6379
           port_range_max: 6379
+        - remote_mode: remote_group_id
+          remote_group_id: { get_param: consul_scid }
+          protocol: tcp
+          port_range_min: 8090
+          port_range_max: 8090
+        - remote_mode: remote_group_id
+          remote_group_id: { get_param: consul_scid }
+          protocol: tcp
+          port_range_min: 6379
+          port_range_max: 6379
 
 outputs:
   srvweb_private_ip:
