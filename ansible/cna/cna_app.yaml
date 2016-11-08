@@ -21,7 +21,7 @@
     - name: Install python3-flask
       apt: name="python3-flask" state="present"
 
-- hosts: "{{ stackname }}-i:{{ stackname }}-s:{{ stackname }}-b:{{ stackname }}-p"
+- hosts: "{{ stackname }}-i:{{ stackname }}-s:{{ stackname }}-b:{{ stackname }}-p:{{ stackname }}-w1:{{ stackname }}-w2"
   #- hosts: "{{ stackname }}-i"
   remote_user: debian
   become: yes
@@ -182,6 +182,15 @@
     - consulport: "8500"
 
   tasks:
+    - name: Install python-swiftclient for python3
+      pip: name="python-swiftclient" executable=pip3
+
+    - name: Install python-keystoneclient for python3
+      pip: name="python-keystoneclient" executable=pip3
+
+    - name: Run service
+      service: name=p state=started
+
     - name: Register service p into consul
       uri: 
         url: "http://{{ consulip }}:{{ consulport }}/v1/agent/service/register"
@@ -310,6 +319,7 @@
     - stackname: "mstack"
     - consulip: "10.10.0.3"
     - consulport: "8500"
+    - puburl: "10.3.222.89:60081"
 
   tasks:
     - name: Install apache
@@ -321,13 +331,36 @@
     - name: Copy js files
       copy: src=web/js dest=/var/www/html owner=www-data group=www-data
 
-    - name: Create cna config
+    - name: Create cna js config
       template: >
         src=web/templates/config.js.j2
         dest=/var/www/html/js/config.js
         owner=www-data
         group=www-data
         mode=0644
+
+    - name: Create cna web config
+      template: >
+        src=web/templates/cna.conf.j2
+        dest=/etc/apache2/sites-available/cna.conf
+        owner=root
+        group=root
+        mode=0644
+
+    - name: Enable apache module proxy_http to allow reverse proxy
+      command: a2enmod proxy_http
+      args:
+        creates: /etc/apache2/mods-enabled/proxy_http.load
+
+    - name: Disable generic site
+      command: sudo a2dissite 000-default.conf
+      args:
+        removes: /etc/apache2/sites-enabled/000-default.conf
+
+    - name: Enable cna site + reverse proxy
+      command: sudo a2ensite cna
+      args:
+        creates: /etc/apache2/sites-enabled/cna.conf
 
     - name: Run service
       service: name=apache2 state=restarted
