@@ -446,6 +446,22 @@
       service: name=haproxy state=restarted
       ignore_errors: yes
 
+    - name: Register service ha into consul
+      uri:
+        url: "http://{{ consulip }}:{{ consulport }}/v1/agent/service/register"
+        method: POST
+        body: '{ "ID": "{{ ansible_nodename }}", "Name": "{{ ansible_nodename }}", "Address": "{{ ansible_default_ipv4.address }}", "Port": 5000 }'
+        body_format: json
+      delegate_to: bastion
+
+    - name: Register a check for ha
+      uri:
+        url: "http://{{ consulip }}:{{ consulport }}/v1/agent/check/register"
+        method: POST
+        body: '{ "ID": "chk{{ ansible_nodename }}", "Name": "haproxy TCP check", "TCP": "{{ ansible_default_ipv4.address }}:5000", "Interval": "10s", "service_id": "{{ ansible_nodename }}" }'
+        body_format: json
+      delegate_to: bastion
+
 
 
 - hosts: "{{ stackname }}-web"
