@@ -15,6 +15,9 @@
     - name: Install links for debugging
       apt: name="links" state="present"
 
+    - name: Install dnsutils for debugging
+      apt: name="dnsutils" state="present"
+
     - name: Install python3-pip
       apt: name="python3-pip" state="present"
 
@@ -410,6 +413,38 @@
         body: '{ "ID": "chk{{ ansible_nodename }}", "Name": "mysql TCP check", "TCP": "{{ ansible_default_ipv4.address }}:6379", "Interval": "10s", "service_id": "{{ ansible_nodename }}" }'
         body_format: json
       delegate_to: bastion
+
+
+
+- hosts: "{{ stackname }}-ha"
+  remote_user: debian
+  become: yes
+
+  vars:
+    - stackname: "mstack"
+    - consulip: "10.10.0.3"
+    - consulport: "8500"
+    - puburl: "10.3.222.89:60081"
+
+  tasks:
+    - name: Install haproxy
+      apt: name=haproxy state=present update_cache=yes cache_valid_time=7200
+
+    - name: Get number of web server
+      shell : openstack stack output show {{ stackname }} wasg_size -f json | jq ."output_value"
+      delegate_to: localhost
+      register: webnb
+    
+    - name: Configure haproxy deploy configuration file template
+      template: src=../roles/v5/haproxy/templates/haproxy.cfg dest=/etc/haproxy/haproxy.cfg
+    
+    - name: Configure haproxy add line to conf file
+      lineinfile: dest=/etc/haproxy/haproxy.cfg line="    server  web{{ item }} {{ stackname }}-wasg-{{ item }}.service.consul:8090 check" insertafter="    balance     roundrobin"
+      with_sequence: count={{ webnb.stdout }}
+    
+    - name: Start haproxy
+      service: name=haproxy state=restarted
+      ignore_errors: yes
 
 
 
