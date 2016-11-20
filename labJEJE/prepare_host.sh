@@ -61,6 +61,27 @@ pdsh -R ssh -w ^labhosts.txt 'su - stack -c "cd devstack && wget https://raw.git
 pdsh -R ssh -w ^labhosts.txt $(cat << EOF
 su - stack -c "cd devstack && perl -i -pe s/secret/$1/ local.conf"
 EOF)
+
+# Download debian image
+pdsh -R ssh -w ^labhosts.txt 'su - stack -c "cd devstack && wget http://cdimage.debian.org/cdimage/openstack/current/debian-8.6.2-openstack-amd64.qcow2"'
+
+# Stack
 pdsh -R ssh -w ^labhosts.txt 'su - stack -c "cd devstack && ./stack.sh"' 
-pdsh -R ssh -w ^labhosts.txt 'su - stack -c "cd devstack && wget http://cdimage.debian.org/cdimage/openstack/current/debian-8.6.2-openstack-amd64.qcow2"' 
+
+# Remove all flavor
+pdsh -R ssh -w ^labhosts.txt 'su - stack -c "cd devstack && source openrc && export OS_USERNAME=admin && openstack flavor delete m1.nano"'
+pdsh -R ssh -w ^labhosts.txt 'su - stack -c "cd devstack && source openrc && export OS_USERNAME=admin && openstack flavor delete m1.micro"'
+pdsh -R ssh -w ^labhosts.txt 'su - stack -c "cd devstack && source openrc && export OS_USERNAME=admin && openstack flavor delete m1.tiny"'
+pdsh -R ssh -w ^labhosts.txt 'su - stack -c "cd devstack && source openrc && export OS_USERNAME=admin && openstack flavor delete m1.small"'
+pdsh -R ssh -w ^labhosts.txt 'su - stack -c "cd devstack && source openrc && export OS_USERNAME=admin && openstack flavor delete m1.medium"'
+pdsh -R ssh -w ^labhosts.txt 'su - stack -c "cd devstack && source openrc && export OS_USERNAME=admin && openstack flavor delete m1.large"'
+pdsh -R ssh -w ^labhosts.txt 'su - stack -c "cd devstack && source openrc && export OS_USERNAME=admin && openstack flavor delete m1.xlarge"'
+sleep 10s
+
+# Create flavor
+pdsh -R ssh -w ^labhosts.txt 'su - stack -c "cd devstack && source openrc && export OS_USERNAME=admin && nova flavor-create m1.tiny 1 512 1 1"'
+pdsh -R ssh -w ^labhosts.txt 'su - stack -c "cd devstack && source openrc && export OS_USERNAME=admin && nova flavor-create m1.small 2 512 5 1"'
+pdsh -R ssh -w ^labhosts.txt 'su - stack -c "cd devstack && source openrc && export OS_USERNAME=admin && nova flavor-create m1.medium 3 1024 10 1"'
+
+# Allow access
 pdsh -R ssh -w ^labhosts.txt "echo stack:$1 | chpasswd"
