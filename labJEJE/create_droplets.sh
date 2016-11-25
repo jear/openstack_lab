@@ -6,9 +6,17 @@
 
 function usage {
 
-echo "Usage: $prog nb_instance"
+echo "Usage: $prog nb_instance flavor [image]"
 echo ""
 echo "nb_instance	Number of instances required"
+echo "flavor 		Instances flavor"
+echo "image 		Instances image default: 14.04.5 x64"
+echo ""
+echo "Flavors:"
+doctl compute size list
+echo ""
+echo "Images:"
+doctl compute image list
 exit 1
 }
 
@@ -35,6 +43,18 @@ then
 	usage
 fi
 
+if [ -z "$2" ]
+then
+	usage
+fi
+
+if [ -z "$3" ]
+then
+	image="14.04.5 x64"
+else
+	image=$3
+fi
+
 # Checking tool deps
 for tool in ssh sshpass pdsh doctl jq
 do
@@ -50,7 +70,7 @@ done
 # Create the required instances
 for i in $(seq $arg1)
 do
-	doctl compute  droplet create devstack-$i --image $(doctl compute image list-distribution -o json | jq '.[] | select(.name=="14.04.5 x64") | .id') --size 16gb --region ams2 --ssh-keys 1997572
+	doctl compute  droplet create devstack-$i --image $(doctl compute image list -o json | jq ".[] | select(.name==\"$image\") | .id") --size "$2" --region ams2 --ssh-keys 1997572
 done
 
 # Wait instance to be ready
