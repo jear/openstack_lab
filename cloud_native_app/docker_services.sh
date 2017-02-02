@@ -2,58 +2,86 @@
 
 # Script to run the CNA as docker services on swarm
 
+#
+# You need to provide your Registry address here:
+#REGISTRY=uggla
+REGISTRY=lab7-2.labossi.hpintelco.org:5500
+KEYSTONE=labossi.hpintelco.org
+WEB=`hostname`
+
+# Patch the javascript for the internal URLs to use 
+# the swarm leader as an entry point for internal micro-services
+sed "s/localhost/$WEB/" `dirname $0`/web/templates/config.js.docker
+
+# Patch the p and w1 conf files to point to the SWIFT instance
+sed "s/keystone/$KEYSTONE/" `dirname $0`/microservices/p/p.conf
+sed "s/keystone/$KEYSTONE/" `dirname $0`/microservices/w1/w1.conf
+
 # Start vizualizer on port 8080
-docker ps | grep visualizer
-if [ $? -ne 0]
-then
-    docker run -it -d -p 8080:8080 -e HOST=$(docker-machine ls | head -2 | grep -v NAME | awk '{print $5}' | sed 's#tcp://##' | sed 's#:2376##') \
-        -e PORT=8080 -v /var/run/docker.sock:/var/run/docker.sock --name visualizer  manomarks/visualizer
+which docker-machine > /dev/null 2>&1 
+if [ $? -ne 0 ]; then
+	ENVOPT=""
+else
+	ENVOPT="-e HOST=$(docker-machine ls | head -2 | grep -v NAME | awk '{print $5}' | sed 's#tcp://##' | sed 's#:2376##') -e PORT=8080"
+fi
+
+docker ps | grep visualizer > /dev/null 2>&1 
+if [ $? -ne 0 ]; then
+    docker run -it -d -p 8080:8080 $ENVOPT -v /var/run/docker.sock:/var/run/docker.sock --name visualizer  manomarks/visualizer
 fi
 
 # Check if the overlay network is available
-docker network list | grep cnalan
-if [ $? -ne 0 ]
-then
+docker network list | grep -E " cnalan " > /dev/null 2>&1
+if [ $? -ne 0 ]; then
     docker network create --driver overlay cnalan
 fi
 
-docker service create --name rabbit --publish 15672:15672 \
+svc=`docker service ls | grep -E " rabbit "`
+if [ _"$svc" = _"" ]; then
+	docker service create --name rabbit --publish 15672:15672 \
     --env RABBITMQ_DEFAULT_USER=stackrabbit \
-    --env  RABBITMQ_DEFAULT_PASS=password \
+    --env RABBITMQ_DEFAULT_PASS=password \
     --network cnalan rabbitmq:3-management
+fi
 
-docker service create --name redis --network cnalan redis
+svc=`docker service ls | grep -E " redis "`
+if [ _"$svc" = _"" ]; then
+	docker service create --name redis --network cnalan redis
+fi
 
-docker service create --name mariadb --network cnalan \
-    --env MYSQL_ROOT_PASSWORD=toto \
-    --env MYSQL_DATABASE=prestashop \
-    --env MYSQL_USER=prestashop \
-    --env MYSQL_PASSWORD=prestashop1234 mariadb  # need to manage dump
+# Build images if not done yet
+for a in web i b p s w w1 w2 db; do
+	img=`docker images | grep -E "^cloudnativeapp_$a "`
+	if [ _"$img" = _"" ]; then
+		docker-compose up -d
+	fi
+done
 
-docker service create --name web --network cnalan --publish 80:80 \
-    uggla/cloudnativeapp_web
+# Push images in Registry if not done yet
+for a in web i b p s w w1 w2 db; do
+	img=`docker images | grep -E "^$REGISTRY/cloudnativeapp_$a "`
+	if [ _"$img" = _"" ]; then
+		docker tag cloudnativeapp_$a $REGISTRY/cloudnativeapp_$a
+		docker push $REGISTRY/cloudnativeapp_$a
+	fi
+done
 
-docker service create --name i --network cnalan \
-    uggla/cloudnativeapp_i
+# Launch services - Should be replaced by docker-compose v3 once available
+for a in web i b p s w w1 w2 db; do
+	if [ $a = "web" ]; then
+		OPT="--publish 80:80"
+	elif [ $a = "w2" ]; then
+		OPT="--env W2_APIKEY=blakey --env W2_TO=machin@bidule.com --env W2_DOMAIN=domain"
+	elif [ $a = "db" ]; then
+		OPT="--env MYSQL_ROOT_PASSWORD=toto --env MYSQL_DATABASE=prestashop --env MYSQL_USER=prestashop --env MYSQL_PASSWORD=prestashop1234" 
+	else
+		OPT=""
+	fi
 
-docker service create --name s --network cnalan \
-    uggla/cloudnativeapp_s
+	svc=`docker service ls | grep -E " $a "`
+	if [ _"$svc" = _"" ]; then
+		docker service create --name $a --network cnalan $OPT $REGISTRY/cloudnativeapp_$a
+	fi
+done
 
-docker service create --name b --network cnalan \
-    uggla/cloudnativeapp_b
-
-docker service create --name p --network cnalan \
-    uggla/cloudnativeapp_p
-
-docker service create --name w --network cnalan \
-    uggla/cloudnativeapp_w
-
-docker service create --name w1 --network cnalan \
-    uggla/cloudnativeapp_w1
-
-docker service create --name w2 --network cnalan \
-    --env W2_APIKEY=blakey \
-    --env W2_TO=machin@bidule.com \
-    --env W2_DOMAIN=domain \
-    uggla/cloudnativeapp_w2
-
+docker service ls
