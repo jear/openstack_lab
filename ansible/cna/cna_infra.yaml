@@ -1,0 +1,14 @@
+---
+# This playbook deploys cna infra.  
+- hosts: localhost
+  #remote_user: root
+
+  vars:
+    - network: "10.2.1.0"
+    - stackname: "mstack"
+    - stackcmd: "../../heat/cna.sh"
+    - stackoutput: [ "srvweb_private_ip", "srvb_private_ip", "srvi_private_ip", "srvw1_private_ip", "srvp_private_ip", "srvs_private_ip", "wasg_server_ips", "srvha_private_ip", "srvrd_private_ip", "srvw2_private_ip" ]
+
+  roles:
+    - v5/heatstack
+    - { role: v5/hostkeys, when: newstack.changed or force_host_keys is defined }

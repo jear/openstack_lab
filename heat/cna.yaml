@@ -1,0 +1,469 @@
+heat_template_version: 2016-04-08
+
+description: >
+  HOT template to create Clound Native Application environment
+
+parameters:
+  srvweb_name:
+    type: string
+  srvrd_name:
+    type: string
+  srvha_name:
+    type: string
+  srvi_name:
+    type: string
+  srvs_name:
+    type: string
+  srvb_name:
+    type: string
+  srvp_name:
+    type: string
+  srvw1_name:
+    type: string
+  srvw2_name:
+    type: string
+  srvrd_name:
+    type: string
+  # Note : srvw is not defined here, because it will use an asg
+  key_name:
+    type: string
+    description: Name of keypair to assign to servers
+  image:
+    type: string
+    description: Name of image to use for web server
+  flavor:
+    type: string
+    description: Flavor to use for web server
+  public_net:
+    type: string
+    description: >
+      ID or name of public network for which floating IP addresses will be allocated
+  private_net_name:
+    type: string
+    description: Name of private network to be created
+  private_net_cidr:
+    type: string
+    description: Private network address (CIDR notation)
+  private_net_gateway:
+    type: string
+    description: Private network gateway address
+  private_net2_name:
+    type: string
+    description: Name of private network to be created
+  private_net2_cidr:
+    type: string
+    description: Private network address (CIDR notation)
+  private_net2_gateway:
+    type: string
+    description: Private network gateway address
+  default_scid:
+    type: string
+    description: Default security group id (need the id, because it does not work with name)
+  consul_scid:
+    type: string
+    description: consul security group id
+  dnslist:
+    type: json
+    description: Default dns servers
+  diskname:
+    type: string
+    description: disk name to attach to redis server (db)
+#  private_net_pool_start:
+#    type: string
+#    description: Start of private network IP address allocation pool
+#  private_net_pool_end:
+#    type: string
+#    description: End of private network IP address allocation pool
+
+resources:
+  private_net:
+    type: OS::Neutron::Net
+    properties:
+      name: { get_param: private_net_name }
+
+  private_subnet:
+    type: OS::Neutron::Subnet
+    properties:
+      network_id: { get_resource: private_net }
+      cidr: { get_param: private_net_cidr }
+      gateway_ip: { get_param: private_net_gateway }
+      dns_nameservers: { get_param: dnslist }
+
+  private_net2:
+    type: OS::Neutron::Net
+    properties:
+      name: { get_param: private_net2_name }
+
+  private_subnet2:
+    type: OS::Neutron::Subnet
+    properties:
+      network_id: { get_resource: private_net2 }
+      cidr: { get_param: private_net2_cidr }
+      gateway_ip: { get_param: private_net2_gateway }
+      dns_nameservers: { get_param: dnslist }
+#      allocation_pools:
+#        - start: { get_param: private_net_pool_start }
+#          end: { get_param: private_net_pool_end }
+
+#  router:
+#    type: OS::Neutron::Router
+#    properties:
+#      external_gateway_info:
+#        network: { get_param: public_net }
+
+  router_interface:
+    type: OS::Neutron::RouterInterface
+    properties:
+      router_id: "router1"
+      subnet_id: { get_resource: private_subnet }
+
+  router_interface2:
+    type: OS::Neutron::RouterInterface
+    properties:
+      router_id: "router1"
+      subnet_id: { get_resource: private_subnet2 }
+
+  wasg:
+    type: OS::Heat::AutoScalingGroup
+    properties:
+      resource:
+        type: OS::Nova::Server
+        properties:
+          image: { get_param: image }
+          flavor: { get_param: flavor }
+          key_name: { get_param: key_name }
+          networks: [{network: {get_resource: private_net2} }]
+          security_groups: [{ get_resource: server_security_group2 }]
+      min_size: 1
+      desired_capacity: 4
+      max_size: 6
+
+  scale_up_policy:
+    type: OS::Heat::ScalingPolicy
+    properties:
+      adjustment_type: change_in_capacity
+      auto_scaling_group_id: {get_resource: wasg}
+      scaling_adjustment: 1
+
+  scale_down_policy:
+    type: OS::Heat::ScalingPolicy
+    properties:
+      adjustment_type: change_in_capacity
+      auto_scaling_group_id: {get_resource: wasg}
+      scaling_adjustment: '-1'
+
+  srvweb:
+    type: OS::Nova::Server
+    properties:
+      name: { get_param: srvweb_name }
+      image: { get_param: image }
+      flavor: { get_param: flavor }
+      key_name: { get_param: key_name }
+      networks:
+        - port: { get_resource: srvweb_port }
+
+  srvweb_port:
+    type: OS::Neutron::Port
+    properties:
+      network_id: { get_resource: private_net }
+      fixed_ips:
+        - subnet_id: { get_resource: private_subnet }
+      security_groups: [{ get_resource: server_security_group }]
+
+  srvweb_floating_ip:
+    type: OS::Neutron::FloatingIP
+    properties:
+      floating_network: { get_param: public_net }
+      port_id: { get_resource: srvweb_port }
+
+  srvrd:
+    type: OS::Nova::Server
+    properties:
+      name: { get_param: srvrd_name }
+      image: { get_param: image }
+      flavor: { get_param: flavor }
+      key_name: { get_param: key_name }
+      networks:
+        - port: { get_resource: srvrd_port }
+
+  srvrd_port:
+    type: OS::Neutron::Port
+    properties:
+      network_id: { get_resource: private_net2 }
+      fixed_ips:
+        - subnet_id: { get_resource: private_subnet2 }
+      security_groups: [{ get_resource: server_security_group2 }]
+
+#  srvrdvol:
+#    type: OS::Cinder::Volume
+#    properties:
+#      size: { get_param: vol_size }
+
+  srvrdvol_att:
+    type: OS::Cinder::VolumeAttachment
+    properties:
+      instance_uuid: { get_resource: srvrd }
+      volume_id: { get_param: diskname }
+      mountpoint: /dev/vdb
+
+  srvha:
+    type: OS::Nova::Server
+    properties:
+      name: { get_param: srvha_name }
+      image: { get_param: image }
+      flavor: { get_param: flavor }
+      key_name: { get_param: key_name }
+      networks:
+        - port: { get_resource: srvha_port }
+
+  srvha_port:
+    type: OS::Neutron::Port
+    properties:
+      network_id: { get_resource: private_net }
+      fixed_ips:
+        - subnet_id: { get_resource: private_subnet }
+      security_groups: [{ get_resource: server_security_group }]
+
+  srvi:
+    type: OS::Nova::Server
+    properties:
+      name: { get_param: srvi_name }
+      image: { get_param: image }
+      flavor: { get_param: flavor }
+      key_name: { get_param: key_name }
+      networks:
+        - port: { get_resource: srvi_port }
+
+  srvi_port:
+    type: OS::Neutron::Port
+    properties:
+      network_id: { get_resource: private_net }
+      fixed_ips:
+        - subnet_id: { get_resource: private_subnet }
+      security_groups: [{ get_resource: server_security_group }]
+
+  srvs:
+    type: OS::Nova::Server
+    properties:
+      name: { get_param: srvs_name }
+      image: { get_param: image }
+      flavor: { get_param: flavor }
+      key_name: { get_param: key_name }
+      networks:
+        - port: { get_resource: srvs_port }
+
+  srvs_port:
+    type: OS::Neutron::Port
+    properties:
+      network_id: { get_resource: private_net }
+      fixed_ips:
+        - subnet_id: { get_resource: private_subnet }
+      security_groups: [{ get_resource: server_security_group }]
+
+  srvb:
+    type: OS::Nova::Server
+    properties:
+      name: { get_param: srvb_name }
+      image: { get_param: image }
+      flavor: { get_param: flavor }
+      key_name: { get_param: key_name }
+      networks:
+        - port: { get_resource: srvb_port }
+
+  srvb_port:
+    type: OS::Neutron::Port
+    properties:
+      network_id: { get_resource: private_net }
+      fixed_ips:
+        - subnet_id: { get_resource: private_subnet }
+      security_groups: [{ get_resource: server_security_group }]
+
+  srvp:
+    type: OS::Nova::Server
+    properties:
+      name: { get_param: srvp_name }
+      image: { get_param: image }
+      flavor: { get_param: flavor }
+      key_name: { get_param: key_name }
+      networks:
+        - port: { get_resource: srvp_port }
+
+  srvp_port:
+    type: OS::Neutron::Port
+    properties:
+      network_id: { get_resource: private_net }
+      fixed_ips:
+        - subnet_id: { get_resource: private_subnet }
+      security_groups: [{ get_resource: server_security_group }]
+
+  srvw1:
+    type: OS::Nova::Server
+    properties:
+      name: { get_param: srvw1_name }
+      image: { get_param: image }
+      flavor: { get_param: flavor }
+      key_name: { get_param: key_name }
+      networks:
+        - port: { get_resource: srvw1_port }
+
+  srvw1_port:
+    type: OS::Neutron::Port
+    properties:
+      network_id: { get_resource: private_net }
+      fixed_ips:
+        - subnet_id: { get_resource: private_subnet }
+      security_groups: [{ get_resource: server_security_group }]
+
+  srvw2:
+    type: OS::Nova::Server
+    properties:
+      name: { get_param: srvw2_name }
+      image: { get_param: image }
+      flavor: { get_param: flavor }
+      key_name: { get_param: key_name }
+      networks:
+        - port: { get_resource: srvw2_port }
+
+  srvw2_port:
+    type: OS::Neutron::Port
+    properties:
+      network_id: { get_resource: private_net }
+      fixed_ips:
+        - subnet_id: { get_resource: private_subnet }
+      security_groups: [{ get_resource: server_security_group }]
+
+  server_security_group:
+    type: OS::Neutron::SecurityGroup
+    properties:
+      description: Add security group rules for server
+      name: { get_param: private_net_name }
+      rules:
+        - remote_mode: remote_group_id
+          remote_group_id: { get_param: default_scid }
+          protocol: icmp 
+        - remote_mode: remote_group_id
+          remote_group_id: { get_param: default_scid }
+          protocol: tcp
+          port_range_min: 22
+          port_range_max: 22
+        - remote_mode: remote_group_id
+          remote_group_id:
+          protocol: tcp
+          port_range_min: 8080
+          port_range_max: 8083
+        - remote_mode: remote_group_id
+          remote_group_id:
+          protocol: tcp
+          port_range_min: 5000
+          port_range_max: 5000
+        - remote_mode: remote_group_id
+          remote_group_id: { get_param: consul_scid }
+          protocol: tcp
+          port_range_min: 8080
+          port_range_max: 8083
+        - remote_mode: remote_group_id
+          remote_group_id: { get_param: consul_scid }
+          protocol: tcp
+          port_range_min: 5000
+          port_range_max: 5000
+        - remote_ip_prefix: 0.0.0.0/0
+          protocol: tcp
+          port_range_min: 80
+          port_range_max: 80
+
+  server_security_group2:
+    type: OS::Neutron::SecurityGroup
+    properties:
+      description: Add security group rules for server
+      name: { get_param: private_net2_name }
+      rules:
+        - remote_mode: remote_group_id
+          remote_group_id: { get_param: default_scid }
+          protocol: icmp 
+        - remote_mode: remote_group_id
+          remote_group_id: { get_param: default_scid }
+          protocol: tcp
+          port_range_min: 22
+          port_range_max: 22
+        - remote_mode: remote_group_id
+          remote_group_id: { get_resource: server_security_group }
+          protocol: tcp
+          port_range_min: 8090
+          port_range_max: 8090
+        - remote_mode: remote_group_id
+          remote_group_id: { get_resource: server_security_group }
+          protocol: tcp
+          port_range_min: 6379
+          port_range_max: 6379
+        - remote_mode: remote_group_id
+          remote_group_id: { get_param: consul_scid }
+          protocol: tcp
+          port_range_min: 8090
+          port_range_max: 8090
+        - remote_mode: remote_group_id
+          remote_group_id: { get_param: consul_scid }
+          protocol: tcp
+          port_range_min: 6379
+          port_range_max: 6379
+
+outputs:
+  srvweb_private_ip:
+    description: IP address of srvweb in private network
+    value: { get_attr: [ srvweb, first_address ] }
+  srvweb_public_ip:
+    description: Floating IP address of srvweb in public network
+    value: { get_attr: [ srvweb_floating_ip, floating_ip_address ] }
+  srvrd_private_ip:
+    description: IP address of srvrd in private network
+    value: { get_attr: [ srvrd, first_address ] }
+  srvha_private_ip:
+    description: IP address of srvha in private network
+    value: { get_attr: [ srvha, first_address ] }
+  srvi_private_ip:
+    description: IP address of srvi in private network
+    value: { get_attr: [ srvi, first_address ] }
+  srvs_private_ip:
+    description: IP address of srvs in private network
+    value: { get_attr: [ srvs, first_address ] }
+  srvb_private_ip:
+    description: IP address of srvb in private network
+    value: { get_attr: [ srvb, first_address ] }
+  srvp_private_ip:
+    description: IP address of srvp in private network
+    value: { get_attr: [ srvp, first_address ] }
+  srvw1_private_ip:
+    description: IP address of srvw1 in private network
+    value: { get_attr: [ srvw1, first_address ] }
+  srvw2_private_ip:
+    description: IP address of srvw2 in private network
+    value: { get_attr: [ srvw2, first_address ] }
+  scale_up_url:
+    description: >
+      This URL is the webhook to scale up the group.  You can invoke
+      the scale-up operation by doing an HTTP POST to this URL; no
+      body nor extra headers are needed.
+    value: {get_attr: [scale_up_policy, alarm_url]}
+  scale_dn_url:
+    description: >
+      This URL is the webhook to scale down the group.  You can invoke
+      the scale-down operation by doing an HTTP POST to this URL; no
+      body nor extra headers are needed.
+    value: {get_attr: [scale_down_policy, alarm_url]}
+  wasg_size:
+    description: >
+      This is the current size of the auto scaling group.
+    value: {get_attr: [wasg, current_size]}
+  wasg_server_list:
+    description: >
+      This is a list of server names that are part of the group.
+    value: {get_attr: [wasg, outputs_list, name]}
+  networks:
+    description: >
+      This is a map of server resources and their networks.
+    value: {get_attr: [wasg, outputs, networks]}
+  wasg_server_ips:
+    description: >
+      This is a list of first ip addresses of the servers in the group
+      for a specified network.
+    value: {get_attr: [wasg, outputs_list, networks, {get_resource: private_net2 }, 0]}
+

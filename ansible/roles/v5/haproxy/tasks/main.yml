@@ -2,7 +2,7 @@
 # tasks file for haproxy
     
 - name: Install haproxy
-  apt: name=haproxy state=present
+  apt: name=haproxy state=present update_cache=yes cache_valid_time=7200
 
 - name: Get number of web server
   shell : openstack stack output show {{ stackname }} asg_size -f json | jq ."output_value"
@@ -19,4 +19,3 @@
 - name: Start haproxy
   service: name=haproxy state=restarted
   ignore_errors: yes
-

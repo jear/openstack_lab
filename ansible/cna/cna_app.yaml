@@ -1,0 +1,535 @@
+---
+# This playbook deploys cna app.  
+- hosts: "{{ stackname }}-*"
+  remote_user: debian
+  become: yes
+  #become_method: sudo
+
+  vars:
+    - stackname: "mstack"
+
+  tasks:
+    - name: Install curl
+      apt: name="curl" state="present" update_cache=yes cache_valid_time=7200
+
+    - name: Install links for debugging
+      apt: name="links" state="present"
+
+    - name: Install dnsutils for debugging
+      apt: name="dnsutils" state="present"
+
+    - name: Install python3-pip
+      apt: name="python3-pip" state="present"
+
+    - name: Install python3-flask
+      apt: name="python3-flask" state="present"
+
+- hosts: "{{ stackname }}-i:{{ stackname }}-s:{{ stackname }}-b:{{ stackname }}-p:{{ stackname }}-w1:{{ stackname }}-w2"
+  remote_user: debian
+  become: yes
+  #become_method: sudo
+
+  vars:
+    - stackname: "mstack"
+    - service: "{{ ansible_nodename | regex_replace(stackname + '-', '') }}"
+    - openstack_ctrl: "10.3.222.89"
+
+  tasks:
+    - name: Create a user for the service
+      user: name={{ service }} shell=/bin/bash system=yes
+
+    - name: Copy services scripts
+      copy: src=microservices/{{ service }}/{{ item }} dest=/home/{{ service }} owner={{ service }} group={{ service }}
+      with_items:
+        - "config.py"
+        - "{{ service }}.py"
+
+    - name: Set service executable
+      command: chmod u+x /home/{{ service }}/{{ service }}.py
+
+    - name: Create cna service
+      template: >
+        src=microservices/{{ service }}/templates/{{ service }}.service.j2
+        dest=/etc/systemd/system/{{ service }}.service
+        owner={{ service }}
+        group={{ service }}
+        mode=0644
+
+    - name: Create cna configuration file
+      template: >
+        src=microservices/{{ service }}/templates/{{ service }}.conf.j2
+        dest=/home/{{ service }}/{{ service }}.conf
+        owner={{ service }}
+        group={{ service }}
+        mode=0644
+
+
+- hosts: "{{ stackname }}-i"
+  remote_user: debian
+  become: yes
+
+  vars:
+    - stackname: "mstack"
+    - consulip: "10.10.0.3"
+    - consulport: "8500"
+
+  tasks:
+    - name: Install mysqlclient for python3
+      apt: name="libmysqlclient-dev" state=present
+
+    - name: Install mysqlclient for python3
+      pip: name="mysqlclient" executable=pip3
+
+    - name: Run service
+      service: name=i state=started
+
+    - name: Open port to access the mysql db
+      shell: openstack security group rule create --proto tcp --src-group $(openstack security group show {{ stackname }} -f json | jq -r ."id") --dst-port 3306 psstack
+      delegate_to: localhost
+      ignore_errors: true
+
+    - name: Register service i into consul
+      uri:
+        url: "http://{{ consulip }}:{{ consulport }}/v1/agent/service/register"
+        method: POST
+        body: '{ "ID": "{{ ansible_nodename }}", "Name": "{{ ansible_nodename }}", "Address": "{{ ansible_default_ipv4.address }}", "Port": 8080 }'
+        body_format: json
+      delegate_to: bastion
+
+    - name: Register a check for service i
+      uri:
+        url: "http://{{ consulip }}:{{ consulport }}/v1/agent/check/register"
+        method: POST
+        body: '{ "ID": "chk{{ ansible_nodename }}", "Name": "mysql TCP check", "TCP": "{{ ansible_default_ipv4.address }}:8080", "Interval": "10s", "service_id": "{{ ansible_nodename }}" }'
+        body_format: json
+      delegate_to: bastion
+
+
+
+- hosts: "{{ stackname }}-s"
+  remote_user: debian
+  become: yes
+
+  vars:
+    - stackname: "mstack"
+    - consulip: "10.10.0.3"
+    - consulport: "8500"
+
+  tasks:
+    - name: Install python3-redis
+      apt: name="python3-redis" state=present
+
+    - name: Run service
+      service: name=s state=started
+
+    - name: Register service s into consul
+      uri: 
+        url: "http://{{ consulip }}:{{ consulport }}/v1/agent/service/register"
+        method: POST 
+        body: '{ "ID": "{{ ansible_nodename }}", "Name": "{{ ansible_nodename }}", "Address": "{{ ansible_default_ipv4.address }}", "Port": 8081 }'
+        body_format: json
+      delegate_to: bastion
+
+    - name: Register a check for service s
+      uri:
+        url: "http://{{ consulip }}:{{ consulport }}/v1/agent/check/register"
+        method: POST
+        body: '{ "ID": "chk{{ ansible_nodename }}", "Name": "mysql TCP check", "TCP": "{{ ansible_default_ipv4.address }}:8081", "Interval": "10s", "service_id": "{{ ansible_nodename }}" }'
+        body_format: json
+      delegate_to: bastion
+
+
+
+- hosts: "{{ stackname }}-b"
+  remote_user: debian
+  become: yes
+
+  vars:
+    - stackname: "mstack"
+    - consulip: "10.10.0.3"
+    - consulport: "8500"
+
+  tasks:
+    - name: Install mysqlclient for python3
+      pip: name="pika" executable=pip3
+
+    - name: Run service
+      service: name=b state=started
+
+    - name: Register service b into consul
+      uri:
+        url: "http://{{ consulip }}:{{ consulport }}/v1/agent/service/register"
+        method: POST
+        body: '{ "ID": "{{ ansible_nodename }}", "Name": "{{ ansible_nodename }}", "Address": "{{ ansible_default_ipv4.address }}", "Port": 8082 }'
+        body_format: json
+      delegate_to: bastion
+
+    - name: Register a check for service b
+      uri:
+        url: "http://{{ consulip }}:{{ consulport }}/v1/agent/check/register"
+        method: POST
+        body: '{ "ID": "chk{{ ansible_nodename }}", "Name": "mysql TCP check", "TCP": "{{ ansible_default_ipv4.address }}:8082", "Interval": "10s", "service_id": "{{ ansible_nodename }}" }'
+        body_format: json
+      delegate_to: bastion
+
+
+
+- hosts: "{{ stackname }}-p"
+  remote_user: debian
+  become: yes
+
+  vars:
+    - stackname: "mstack"
+    - consulip: "10.10.0.3"
+    - consulport: "8500"
+
+  tasks:
+    - name: Upgrade pip to latest revision, this is to avoid a bug with requests that will be upgraded by keystoneclient and that will break older pip
+      command: pip3 install -U pip
+
+    - name: Install python-swiftclient for python3
+      pip: name="python-swiftclient" executable=pip3
+
+    - name: Install python-keystoneclient for python3
+      pip: name="python-keystoneclient" executable=pip3
+
+    - name: Run service
+      service: name=p state=started
+
+    - name: Register service p into consul
+      uri: 
+        url: "http://{{ consulip }}:{{ consulport }}/v1/agent/service/register"
+        method: POST 
+        body: '{ "ID": "{{ ansible_nodename }}", "Name": "{{ ansible_nodename }}", "Address": "{{ ansible_default_ipv4.address }}", "Port": 8083 }'
+        body_format: json
+      delegate_to: bastion
+    
+    - name: Register a check for mysql
+      uri: 
+        url: "http://{{ consulip }}:{{ consulport }}/v1/agent/check/register"
+        method: POST 
+        body: '{ "ID": "chk{{ ansible_nodename }}", "Name": "mysql TCP check", "TCP": "{{ ansible_default_ipv4.address }}:8083", "Interval": "10s", "service_id": "{{ ansible_nodename }}" }'
+        body_format: json
+      delegate_to: bastion
+
+
+
+- hosts: "{{ stackname }}-w1"
+  remote_user: debian
+  become: yes
+
+  vars:
+    - stackname: "mstack"
+    - consulip: "10.10.0.3"
+    - consulport: "8500"
+
+  tasks:
+    - name: Upgrade pip to latest revision, this is to avoid a bug with requests that will be upgraded by keystoneclient and that will break older pip
+      command: pip3 install -U pip
+
+    - name: Install mysqlclient for python3
+      pip: name="pika" executable=pip3
+
+    - name: Install python3-redis
+      apt: name="python3-redis" state=present
+
+    - name: Install python-swiftclient for python3
+      pip: name="python-swiftclient" executable=pip3
+
+    - name: Install python-keystoneclient for python3
+      pip: name="python-keystoneclient" executable=pip3
+
+    - name: Run service
+      service: name=w1 state=started
+
+    - name: Register service w1 into consul
+      uri: 
+        url: "http://{{ consulip }}:{{ consulport }}/v1/agent/service/register"
+        method: POST 
+        body: '{ "ID": "{{ ansible_nodename }}", "Name": "{{ ansible_nodename }}", "Address": "{{ ansible_default_ipv4.address }}" }'
+        body_format: json
+      delegate_to: bastion
+
+
+- hosts: "{{ stackname }}-w2"
+  remote_user: debian
+  become: yes
+
+  vars:
+    - stackname: "mstack"
+    - consulip: "10.10.0.3"
+    - consulport: "8500"
+
+  tasks:
+    - name: Install mysqlclient for python3
+      pip: name="pika" executable=pip3
+
+    - name: Run service
+      service: name=w2 state=started
+      ignore_errors: true
+
+    - name: Register service w2 into consul
+      uri: 
+        url: "http://{{ consulip }}:{{ consulport }}/v1/agent/service/register"
+        method: POST 
+        body: '{ "ID": "{{ ansible_nodename }}", "Name": "{{ ansible_nodename }}", "Address": "{{ ansible_default_ipv4.address }}" }'
+        body_format: json
+      delegate_to: bastion
+
+
+
+- hosts: "{{ stackname }}-wasg*"
+  remote_user: debian
+  become: yes
+
+  vars:
+    - stackname: "mstack"
+    - consulip: "10.10.0.3"
+    - consulport: "8500"
+    - service: "w"
+
+  tasks:
+    - name: Create a user for the service
+      user: name={{ service }} shell=/bin/bash system=yes
+
+    - name: Copy services scripts
+      copy: src=microservices/{{ service }}/{{ item }} dest=/home/{{ service }} owner={{ service }} group={{ service }}
+      with_items:
+        - "config.py"
+        - "{{ service }}.py"
+        - "prices"
+
+    - name: Set service executable
+      command: chmod u+x /home/{{ service }}/{{ service }}.py
+
+    - name: Create cna service
+      template: >
+        src=microservices/{{ service }}/templates/{{ service }}.service.j2
+        dest=/etc/systemd/system/{{ service }}.service
+        owner={{ service }}
+        group={{ service }}
+        mode=0644
+
+    - name: Create cna configuration file
+      template: >
+        src=microservices/{{ service }}/templates/{{ service }}.conf.j2
+        dest=/home/{{ service }}/{{ service }}.conf
+        owner={{ service }}
+        group={{ service }}
+        mode=0644
+
+    - name: Install Imagemagick
+      apt: name="imagemagick" state=present
+
+    - name: Run service
+      service: name=w state=started
+
+    - name: Register all w services into consul
+      uri:
+        url: "http://{{ consulip }}:{{ consulport }}/v1/agent/service/register"
+        method: POST
+        body: '{ "ID": "{{ ansible_nodename }}", "Name": "{{ stackname }}-wasg-{{ play_hosts.index(inventory_hostname) | int + 1 }}", "Address": "{{ ansible_default_ipv4.address }}", "Port": 8090 }'
+        body_format: json
+      delegate_to: bastion
+
+    - name: Register a check for web
+      uri:
+        url: "http://{{ consulip }}:{{ consulport }}/v1/agent/check/register"
+        method: POST
+        body: '{ "ID": "chk-{{ ansible_nodename }}", "Name": "Service w HTTP check", "HTTP": "http://{{ ansible_default_ipv4.address }}:8090/", "Interval": "10s",  "service_id": "{{ ansible_nodename }}" }'
+        body_format: json
+      delegate_to: bastion
+
+
+- hosts: "{{ stackname }}-rd"
+  remote_user: debian
+  become: yes
+
+  vars:
+    - stackname: "mstack"
+    - consulip: "10.10.0.3"
+    - consulport: "8500"
+
+  tasks:
+    - name: Install redis-server
+      apt: name="redis-server" state=present
+
+    - name: Create mount point
+      command: mkdir /data
+      args:
+        creates: /data
+
+    - name: Mounting persistent volume
+      mount: name=/data src=/dev/vdb state=mounted fstype=ext4
+      register: isvolume
+      ignore_errors: yes
+
+    - name: Initializing volume
+      command: mkfs.ext4 /dev/vdb
+      when: isvolume.failed is defined
+
+    - name: Now mounting
+      mount: name=/data src=/dev/vdb state=mounted fstype=ext4
+      when: isvolume.failed is defined
+
+    - name: Changing ownership
+      command: chown -R redis:redis /data
+      when: isvolume.failed is defined
+
+    - name: Checking if /var/lib/redis is a link
+      command: test -L /var/lib/mysql
+      register: islink
+      ignore_errors: yes
+
+    - name: Removing real directory
+      file: path=/var/lib/redis state=absent
+      when: islink.rc != 0
+
+    - name: Linking db to /data
+      command: ln -s /data /var/lib/redis
+      when: islink.rc != 0
+
+    - name: Configure redis to listen on all interfaces
+      replace: dest=/etc/redis/redis.conf regexp='^bind 127.0.0.1' replace='bind 0.0.0.0' backup='yes'
+
+    - name: Configure appendonly mode
+      replace: dest=/etc/redis/redis.conf regexp='^appendonly no' replace='appendonly yes' backup='yes'
+
+    - name: Run service
+      service: name=redis-server state=restarted
+
+    - name: Register service redis into consul
+      uri:
+        url: "http://{{ consulip }}:{{ consulport }}/v1/agent/service/register"
+        method: POST
+        body: '{ "ID": "{{ ansible_nodename }}", "Name": "{{ ansible_nodename }}", "Address": "{{ ansible_default_ipv4.address }}", "Port": 6379 }'
+        body_format: json
+      delegate_to: bastion
+
+    - name: Register a check for redis
+      uri:
+        url: "http://{{ consulip }}:{{ consulport }}/v1/agent/check/register"
+        method: POST
+        body: '{ "ID": "chk{{ ansible_nodename }}", "Name": "mysql TCP check", "TCP": "{{ ansible_default_ipv4.address }}:6379", "Interval": "10s", "service_id": "{{ ansible_nodename }}" }'
+        body_format: json
+      delegate_to: bastion
+
+
+
+- hosts: "{{ stackname }}-ha"
+  remote_user: debian
+  become: yes
+
+  vars:
+    - stackname: "mstack"
+    - consulip: "10.10.0.3"
+    - consulport: "8500"
+    - puburl: "10.3.222.89:60081"
+
+  tasks:
+    - name: Install haproxy
+      apt: name=haproxy state=present update_cache=yes cache_valid_time=7200
+
+    - name: Get number of web server
+      shell : openstack stack output show {{ stackname }} wasg_size -f json | jq ."output_value"
+      delegate_to: localhost
+      register: webnb
+    
+    - name: Configure haproxy deploy configuration file template
+      template: src=../roles/v5/haproxy/templates/haproxy.cfg dest=/etc/haproxy/haproxy.cfg
+    
+    - name: Configure haproxy add line to conf file
+      lineinfile: dest=/etc/haproxy/haproxy.cfg line="    server  web{{ item }} {{ stackname }}-wasg-{{ item }}.service.consul:8090 check" insertafter="    balance     roundrobin"
+      with_sequence: count={{ webnb.stdout }}
+    
+    - name: Start haproxy
+      service: name=haproxy state=restarted
+      ignore_errors: yes
+
+    - name: Register service ha into consul
+      uri:
+        url: "http://{{ consulip }}:{{ consulport }}/v1/agent/service/register"
+        method: POST
+        body: '{ "ID": "{{ ansible_nodename }}", "Name": "{{ ansible_nodename }}", "Address": "{{ ansible_default_ipv4.address }}", "Port": 5000 }'
+        body_format: json
+      delegate_to: bastion
+
+    - name: Register a check for ha
+      uri:
+        url: "http://{{ consulip }}:{{ consulport }}/v1/agent/check/register"
+        method: POST
+        body: '{ "ID": "chk{{ ansible_nodename }}", "Name": "haproxy TCP check", "TCP": "{{ ansible_default_ipv4.address }}:5000", "Interval": "10s", "service_id": "{{ ansible_nodename }}" }'
+        body_format: json
+      delegate_to: bastion
+
+
+
+- hosts: "{{ stackname }}-web"
+  remote_user: debian
+  become: yes
+
+  vars:
+    - stackname: "mstack"
+    - consulip: "10.10.0.3"
+    - consulport: "8500"
+    - puburl: "10.3.222.89:60081"
+
+  tasks:
+    - name: Install apache
+      apt: name="apache2" state=present
+
+    - name: Copy index.html file
+      copy: src=web/ dest=/var/www/html owner=www-data group=www-data
+
+    - name: Copy js files
+      copy: src=web/js dest=/var/www/html owner=www-data group=www-data
+
+    - name: Create cna js config
+      template: >
+        src=web/templates/config.js.j2
+        dest=/var/www/html/js/config.js
+        owner=www-data
+        group=www-data
+        mode=0644
+
+    - name: Create cna web config
+      template: >
+        src=web/templates/cna.conf.j2
+        dest=/etc/apache2/sites-available/cna.conf
+        owner=root
+        group=root
+        mode=0644
+
+    - name: Enable apache module proxy_http to allow reverse proxy
+      command: a2enmod proxy_http
+      args:
+        creates: /etc/apache2/mods-enabled/proxy_http.load
+
+    - name: Disable generic site
+      command: sudo a2dissite 000-default.conf
+      args:
+        removes: /etc/apache2/sites-enabled/000-default.conf
+
+    - name: Enable cna site + reverse proxy
+      command: sudo a2ensite cna
+      args:
+        creates: /etc/apache2/sites-enabled/cna.conf
+
+    - name: Run service
+      service: name=apache2 state=restarted
+
+    - name: Register service web into consul
+      uri:
+        url: "http://{{ consulip }}:{{ consulport }}/v1/agent/service/register"
+        method: POST
+        body: '{ "ID": "{{ ansible_nodename }}", "Name": "{{ ansible_nodename }}", "Address": "{{ ansible_default_ipv4.address }}", "Port": 80 }'
+        body_format: json
+      delegate_to: bastion
+
+    - name: Register a check for web
+      uri:
+        url: "http://{{ consulip }}:{{ consulport }}/v1/agent/check/register"
+        method: POST
+        body: '{ "ID": "chk{{ ansible_nodename }}", "Name": "mysql TCP check", "TCP": "{{ ansible_default_ipv4.address }}:80", "Interval": "10s", "service_id": "{{ ansible_nodename }}" }'
+        body_format: json
+      delegate_to: bastion
